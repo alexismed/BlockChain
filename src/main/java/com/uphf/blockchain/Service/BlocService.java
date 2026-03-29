@@ -34,18 +34,7 @@ public class BlocService {
     }
     @PostConstruct
     public void chargerDepuisJson() {
-        File fichier = new File(FILE_NAME_BLOCKCHAIN);
-        if (fichier.exists()) {
-            try {
-                blockchain = objectMapper.readValue(fichier, new TypeReference<List<Bloc>>() {});
-                System.out.println(" Blockchain chargée depuis le JSON ! (" + blockchain.size() + " blocs)");
-            } catch (IOException e) {
-                System.out.println(" Erreur de lecture du JSON : " + e.getMessage());
-            }
-        } else {
-            System.out.println(" Aucun fichier JSON trouvé, démarrage d'une blockchain vide.");
-        }
-        fichier = new File(FILE_NAME_MEMPOOL);
+        File fichier = new File(FILE_NAME_MEMPOOL);
         if (fichier.exists()) {
             try {
                 mempool = objectMapper.readValue(fichier, new TypeReference<List<Transaction>>() {});
@@ -54,7 +43,20 @@ public class BlocService {
                 System.out.println(" Erreur de lecture du JSON : " + e.getMessage());
             }
         } else {
+            remplirMempool();
             System.out.println(" Aucun fichier JSON trouvé, démarrage d'un mempool vide.");
+        }
+        fichier = new File(FILE_NAME_BLOCKCHAIN);
+        if (fichier.exists()) {
+            try {
+                blockchain = objectMapper.readValue(fichier, new TypeReference<List<Bloc>>() {});
+                System.out.println(" Blockchain chargée depuis le JSON ! (" + blockchain.size() + " blocs)");
+            } catch (IOException e) {
+                System.out.println(" Erreur de lecture du JSON : " + e.getMessage());
+            }
+        } else {
+            blockchain.add(genererBlocTest());
+            System.out.println(" Aucun fichier JSON trouvé, démarrage d'une blockchain vide.");
         }
     }
     public void sauvegarderEnJson() {
