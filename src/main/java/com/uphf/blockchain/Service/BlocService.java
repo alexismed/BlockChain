@@ -306,6 +306,7 @@ public class BlocService {
             header.setNonce(i);
             String hash = hasherHeader(header);
             if(validerHash(hash, header.getTarget())){
+                bloc.setHashBlock(hash);
                 return true;
             }
         }
@@ -338,8 +339,11 @@ public class BlocService {
     @Scheduled(fixedRate = 10)
     public void minerBloc()
     {
-
         chargerDepuisJson();
+        if(blockchain.size()<1)
+        {
+            blockchain.add(genererBlocTest());
+        }
         Body body = genererBodyTest();
         Bloc blocPrecedent = blockchain.getLast();
         String hashPrecedent = hasherHeader(blocPrecedent.getBlockHeader());

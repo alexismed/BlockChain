@@ -3,13 +3,12 @@ package com.uphf.blockchain.Entity;
 public class Bloc {
     Header BlockHeader;
     Body BlockBody;
+    String HashBlock;
 
     public Bloc(Header blockHeader, Body blockBody) {
         BlockHeader = blockHeader;
         BlockBody = blockBody;
-    }
-    public Bloc(){
-
+        HashBlock = "EmptyHash";
     }
 
     public Body getBlockBody() {
@@ -26,5 +25,13 @@ public class Bloc {
 
     public void setBlockHeader(Header blockHeader) {
         BlockHeader = blockHeader;
+    }
+
+    public void setHashBlock(String hash) {
+        HashBlock = hash;
+    }
+
+    public String getHashBlock() {
+        return HashBlock;
     }
 }

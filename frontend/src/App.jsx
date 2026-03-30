@@ -59,7 +59,7 @@ const App = () => {
 
             return {
               index: index,
-              hash: `BLOCK_HASH_N°${index}`,
+              hash: javaBlock.HashBlock || javaBlock.hashBlock,
               prevHash: header?.hashPre || header?.HashPre || "0000000000000000",
               merkleRoot: header?.merkleRoot || header?.MerkleRoot,
               timestamp: header?.timeStamp || header?.TimeStamp,
