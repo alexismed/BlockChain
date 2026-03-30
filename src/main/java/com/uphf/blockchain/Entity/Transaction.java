@@ -9,14 +9,16 @@ public class Transaction {
     String Expediteur;
     String Destinataire;
     Double Quantite;
+    Double Frais;
     String SignatureTx;
 
     public Transaction() {}
 
-    public Transaction(String expediteur, String destinataire, Double quantite) {
+    public Transaction(String expediteur, String destinataire, Double quantite, Double frais) {
         this.Expediteur = expediteur;
         this.Destinataire = destinataire;
         this.Quantite = quantite;
+        this.Frais = frais;
     }
 
     public void signerTransaction(PrivateKey privateKey) {
@@ -52,6 +54,14 @@ public class Transaction {
 
     public void setQuantite(Double quantite) {
         Quantite = quantite;
+    }
+
+    public Double getFrais() {
+        return Frais;
+    }
+
+    public void setFrais(Double frais) {
+        Frais = frais;
     }
 
     public String getDestinataire() {

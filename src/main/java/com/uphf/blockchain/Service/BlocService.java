@@ -71,7 +71,7 @@ public class BlocService {
 
     public void remplirMempool()
     {
-        for(int i = 0; i< 100; i++)
+        while(mempool.size() < 100)
         {
             mempool.add(genererTransactionTest());
         }
@@ -116,7 +116,8 @@ public class BlocService {
         Transaction transaction = new Transaction(
             genererRandomString(), 
             genererRandomString(), 
-            randNumber.nextDouble()*100
+            randNumber.nextDouble()*100,
+            randNumber.nextDouble()*10
         );
         return transaction;
     } 
@@ -131,6 +132,7 @@ public class BlocService {
     public Body genererBodyTest()
     {
         List<Transaction> transList = new ArrayList<>();
+        remplirMempool();
         for(int i = 0; i< 4; i++)
         {
             transList.add(mempool.get(i));
@@ -197,7 +199,7 @@ public class BlocService {
 
     public String hasherTransaction(Transaction transaction) {
         String result = transaction.getExpediteur() + transaction.getDestinataire();
-        result += String.format("%.9f", transaction.getQuantite());
+        result += String.format("%.9f", transaction.getQuantite() + transaction.getFrais());
         return hasher(result);
     }
 
@@ -359,7 +361,7 @@ public class BlocService {
         {
             blockchain.add(newBloc);
             sauvegarderEnJson();
-            for(int i = 0; i< 4; i++)
+            for(int i = 3; i>=0; i--)
             {
                 mempool.add(genererTransactionTest());
                 mempool.remove(i);

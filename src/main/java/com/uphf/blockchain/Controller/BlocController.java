@@ -41,7 +41,7 @@ public class BlocController {
         }
 
         Wallet monWallet = new Wallet();
-        Transaction tx = new Transaction(monWallet.getAdressePublique(), destinataire, montant);
+        Transaction tx = new Transaction(monWallet.getAdressePublique(), destinataire, montant, montant);
         tx.signerTransaction(monWallet.getPrivateKey());
 
         if (tx.verifierSignature(monWallet.getPublicKey())) {
