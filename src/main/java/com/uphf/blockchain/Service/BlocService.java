@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,7 +103,7 @@ public class BlocService {
         Random randNumber = new Random();
         Header header = new Header(
             genererRandomString(), 
-            LocalDate.now(),
+            LocalDateTime.now(),
             genererRandomString(),
                 5,
             randNumber.nextInt(1000) );
@@ -352,7 +352,7 @@ public class BlocService {
         String merkleRoot = hasherBody(body);
         Header header = new Header(
             merkleRoot, 
-            LocalDate.now(),
+            LocalDateTime.now(),
             hashPrecedent,
                 5,
             0);

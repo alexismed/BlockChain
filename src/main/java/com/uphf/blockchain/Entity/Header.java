@@ -1,15 +1,15 @@
 package com.uphf.blockchain.Entity;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 
 public  class Header {
     String MerkleRoot;
-    LocalDate TimeStamp;
+    LocalDateTime TimeStamp;
     String HashPre;
     int  Target;
     int Nonce ;
 
-    public Header(String merkleRoot, LocalDate timeStamp, String hashPre, int target, int nonce) {
+    public Header(String merkleRoot, LocalDateTime timeStamp, String hashPre, int target, int nonce) {
         MerkleRoot = merkleRoot;
         TimeStamp = timeStamp;
         HashPre = hashPre;
@@ -25,11 +25,11 @@ public  class Header {
         MerkleRoot = merkleRoot;
     }
 
-    public LocalDate getTimeStamp() {
+    public LocalDateTime getTimeStamp() {
         return TimeStamp;
     }
 
-    public void setTimeStamp(LocalDate timeStamp) {
+    public void setTimeStamp(LocalDateTime timeStamp) {
         TimeStamp = timeStamp;
     }
 

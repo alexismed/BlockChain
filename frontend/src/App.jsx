@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
-  ArrowLeft,
-  ArrowRight,
+  ChevronLeft,
+  ChevronsLeft,
+  ChevronRight,
+  ChevronsRight,
   Database,
   Cpu,
   Search,
@@ -68,12 +70,7 @@ const App = () => {
             };
           });
 
-          setBlocks((prevBlocks) => {
-            if (prevBlocks.length !== formattedBlocks.length) {
-              setCurrentIndex(formattedBlocks.length - 1);
-            }
-            return formattedBlocks;
-          });
+          setBlocks(formattedBlocks);
         }
 
         // 2. Récupération du Mempool en direct
@@ -152,8 +149,10 @@ const App = () => {
     setTimeout(() => setNotification(""), 4000);
   };
 
+  const moveFirst = () => setCurrentIndex(0);
   const moveNext = () => currentIndex < blocks.length - 1 && setCurrentIndex(currentIndex + 1);
   const movePrev = () => currentIndex > 0 && setCurrentIndex(currentIndex - 1);
+  const moveLast = () => setCurrentIndex(blocks.length - 1);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -177,7 +176,11 @@ const App = () => {
   };
 
   return (
-      <div className="flex h-screen bg-slate-900 text-white overflow-hidden font-sans">
+      <div className="flex h-screen text-black text-slate-800 overflow-hidden font-sans">
+      {/* <div className="flex h-screen bg-slate-900 text-white overflow-hidden font-sans"> */}
+      {/* <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] 
+      from-cyan-400 via-teal-500 to-emerald-600 text-slate-800 font-sans 
+      p-6 overflow-hidden flex flex-col gap-6"> */}
 
         {/* 1. PANNEAU GAUCHE : LE WALLET (25% de l'écran) */}
         <aside className="w-1/4 border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col z-20">
@@ -282,25 +285,22 @@ const App = () => {
         <main className="w-2/4 flex flex-col items-center justify-center p-8 relative overflow-hidden">
           <div className="z-20 text-center mb-6 w-full">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Database className="text-blue-400" size={28} />
-              <h1 className="text-3xl font-black tracking-tighter text-blue-50 uppercase italic">
-                Explorer
+              <Database className="text-teal-500" size={28} />
+              <h1 className="text-3xl font-black tracking-tighter text-blue uppercase">
+                BlockChain Explorer
               </h1>
             </div>
 
-            <form onSubmit={handleSearch} className="flex w-72 mx-auto group shadow-2xl mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={14} />
-                <input
-                    type="text"
-                    placeholder="Index..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-l-xl py-2 pl-9 pr-3 outline-none focus:border-blue-500 text-xs transition-all"
-                />
-              </div>
-              <button className="bg-blue-600 hover:bg-blue-500 px-4 rounded-r-xl font-black text-xs uppercase tracking-widest transition-colors">
-                Go
+            <form onSubmit={handleSearch} className="flex bg-white/90 p-1 rounded-2xl shadow-xl w-72 border border-teal-100 mx-auto mb-4">
+              <input
+                type="text"
+                placeholder="Block Index..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-transparent px-4 py-2 text-xs outline-none flex-1"
+              />
+              <button className="bg-teal-500 text-white p-2 rounded-xl">
+                <Search size={16} />
               </button>
             </form>
 
@@ -309,71 +309,94 @@ const App = () => {
             </div>
           </div>
 
-          <div className="relative w-full h-80 flex items-center justify-center">
+          <div className="relative w-full h-[400px] flex items-center justify-center">
             {blocks.length === 0 ? (
                 <div className="text-slate-500 font-mono text-sm animate-pulse">Chargement de la blockchain...</div>
             ) : (
-                <AnimatePresence mode="popLayout" initial={false}>
-                  {blocks.map((block, i) => {
-                    const pos = getBlockPosition(i);
-                    if (pos.includes("hidden") && Math.abs(i - currentIndex) > 1) return null;
+              <AnimatePresence mode="popLayout" initial={false}>
+                {blocks.map((block, i) => {
+                  const pos = getBlockPosition(i);
+                  if (pos.includes("hidden") && Math.abs(i - currentIndex) > 1) return null;
 
-                    return (
-                        <motion.div
-                            key={block.index}
-                            variants={blockVariants}
-                            animate={pos}
-                            initial={pos.includes("Left") ? "hiddenLeft" : "hiddenRight"}
-                            exit={pos.includes("Left") ? "hiddenLeft" : "hiddenRight"}
-                            transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                            onClick={() => pos === "center" && setSelectedBlock(block)}
-                            className={`absolute w-72 p-6 rounded-[2rem] border shadow-2xl transition-all ${
-                                pos === "center"
-                                    ? "bg-gradient-to-br from-blue-600 to-indigo-900 border-blue-300 cursor-pointer hover:scale-105 active:scale-95"
-                                    : "bg-slate-800 border-slate-700"
-                            }`}
-                        >
-                          <div className="font-mono text-[9px] truncate mb-4 opacity-30 bg-black/30 p-1.5 rounded tracking-widest">
+                  return (
+                    <motion.div
+                      key={block.index}
+                      variants={blockVariants}
+                      animate={pos}
+                      initial={pos.includes("Left") ? "hiddenLeft" : "hiddenRight"}
+                      exit={pos.includes("Left") ? "hiddenLeft" : "hiddenRight"}
+                      transition={{ type: "spring", stiffness: 200, damping: 25 }}
+                      onClick={() => pos === "center" && setSelectedBlock(block)}
+                      className={`absolute w-72 h-80 rounded-[3rem] p-8 shadow-2xl flex flex-col justify-between border-2 transition-all cursor-pointer 
+                      ${
+                        i === blocks.length - 1
+                          ? "bg-teal-200 border-teal-200 scale-100"
+                          : pos === "center"
+                            ? "bg-white border-teal-200 scale-100"
+                            : "bg-white/40 border-white/20 opacity-50 scale-90"
+                      }
+                      `}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="bg-teal-500 text-white px-4 py-1 rounded-full text-[20px] font-black">
+                          {
+                            i === 0 ? "Genesis" : "Block #" + block.index
+                          }
+                        </div>
+                        <Database className="text-teal-200" size={32} />
+                      </div>
+
+                      <div>
+                        <div className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Block Hash</div>
+                        <div className="font-mono text-[9px] break-all text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-xl">
                             {block.hash}
-                          </div>
+                        </div>
+                      </div>
 
-                          <div className={`font-black leading-none transition-all duration-500 ${pos === "center" ? "text-2xl text-white" : "text-sm text-slate-700"}`}>
-                            BLOCK INDEX # {block.index}
-                          </div>
-
-                          {pos === "center" && (
-                              <motion.div
-                                  initial={{ opacity: 0 }}
-                                  animate={{ opacity: 1 }}
-                                  className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between"
-                              >
-                        <span className="text-[9px] uppercase font-bold text-blue-300 animate-pulse flex items-center gap-1.5">
-                          <Shield size={10} /> Inspect Header
-                        </span>
-                                <span className="text-[9px] font-mono text-blue-200/50">v1.2</span>
-                              </motion.div>
-                          )}
-                        </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <div className="flex flex-col">
+                            <span className="text-[8px] font-bold text-slate-400 uppercase">Status</span>
+                            <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
+                              <Shield size={10} /> Validated
+                            </span>
+                        </div>
+                        <ChevronRight className="text-teal-500" />
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
             )}
           </div>
 
-          <div className="mt-6 flex gap-10 z-20">
+          <div className="absolute bottom-10 flex gap-4">
+            <button
+                onClick={moveFirst}
+                disabled={currentIndex === 0 || blocks.length === 0}
+                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
+            >
+              <ChevronsLeft size={24} />
+            </button>
             <button
                 onClick={movePrev}
                 disabled={currentIndex === 0 || blocks.length === 0}
-                className="p-4 rounded-full bg-slate-800 hover:bg-blue-600 disabled:opacity-5 border border-slate-700 shadow-xl transition-all active:scale-90"
+                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
             >
-              <ArrowLeft size={24} />
+              <ChevronLeft size={24} />
             </button>
             <button
                 onClick={moveNext}
                 disabled={currentIndex === blocks.length - 1 || blocks.length === 0}
-                className="p-4 rounded-full bg-slate-800 hover:bg-blue-600 disabled:opacity-5 border border-slate-700 shadow-xl transition-all active:scale-90"
+                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
             >
-              <ArrowRight size={24} />
+              <ChevronRight size={24} />
+            </button>
+            <button
+                onClick={moveLast}
+                disabled={currentIndex === blocks.length - 1 || blocks.length === 0}
+                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
+             >
+              <ChevronsRight size={24} />
             </button>
           </div>
         </main>
@@ -441,95 +464,70 @@ const App = () => {
 
         {/* --- MODALE HEADER DU BLOC --- */}
         <AnimatePresence>
-          {selectedBlock && (
-              <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-50 p-4"
-                  onClick={() => setSelectedBlock(null)}
-              >
-                <motion.div
-                    initial={{ scale: 0.8, rotateX: 15 }}
-                    animate={{ scale: 1, rotateX: 0 }}
-                    exit={{ scale: 0.8 }}
-                    className="bg-slate-900 border border-blue-500/30 p-10 rounded-[3rem] w-full max-w-2xl shadow-[0_0_80px_rgba(59,130,246,0.15)] relative max-h-[90vh] overflow-y-auto custom-scrollbar"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                      onClick={() => setSelectedBlock(null)}
-                      className="absolute top-8 right-8 text-slate-500 hover:text-white sticky"
-                  >
-                    <X size={28} />
-                  </button>
-                  <h3 className="text-3xl font-black text-blue-500 mb-10 flex items-center gap-4 uppercase italic tracking-tighter">
-                    <Shield size={36} /> Block Header #{selectedBlock.index}
-                  </h3>
+        {selectedBlock && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-teal-900/40 backdrop-blur-md flex items-center justify-center z-50 p-6"
+            onClick={() => setSelectedBlock(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }}
+              className="bg-white rounded-[3rem] p-10 w-full max-w-2xl shadow-2xl relative max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button onClick={() => setSelectedBlock(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800 transition-colors">
+                <X size={24} />
+              </button>
+              
+              <h3 className="text-2xl font-black text-slate-800 mb-8 flex items-center gap-3">
+                <div className="bg-teal-500 p-2 rounded-xl text-white"><Shield size={24} /></div>
+                Details: Block {selectedBlock.index === 0 ? "Genesis" : "#" + selectedBlock.index}
+              </h3>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div className="md:col-span-2 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                      <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Merkle Root</label>
-                      <div className="font-mono text-[10px] text-slate-300 break-all">{selectedBlock.merkleRoot}</div>
-                    </div>
-
-                    <div className="md:col-span-2 bg-slate-800/50 p-4 rounded-xl border border-slate-700">
-                      <label className="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Previous Hash</label>
-                      <div className="font-mono text-[10px] text-slate-500 break-all">{selectedBlock.prevHash}</div>
-                    </div>
-
-                    <div className="bg-slate-800/50 p-5 rounded-xl border border-slate-700 flex justify-between items-center">
-                      <div className="flex items-center gap-3 text-slate-400">
-                        <Clock size={18} /> <span className="text-xs font-bold">Time</span>
-                      </div>
-                      <div className="text-sm font-mono text-white">
-                        {selectedBlock.timestamp ? selectedBlock.timestamp : "Inconnu"}
-                      </div>
-                    </div>
-
-                    <div className="bg-slate-800/50 p-5 rounded-xl border border-slate-700 flex justify-between items-center">
-                      <div className="flex items-center gap-3 text-slate-400">
-                        <Cpu size={18} /> <span className="text-xs font-bold">Nonce</span>
-                      </div>
-                      <div className="text-sm font-mono text-yellow-500 font-bold">{selectedBlock.nonce}</div>
-                    </div>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="col-span-2 bg-slate-50 p-4 rounded-2xl">
+                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Hash Précédent</label>
+                  <div className="font-mono text-[10px] text-slate-600 break-all">{selectedBlock.prevHash}</div>
+                </div>
+                <div className="col-span-2 bg-slate-50 p-4 rounded-2xl">
+                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Merkle Root</label>
+                  <div className="font-mono text-[10px] text-slate-600 break-all">{selectedBlock.merkleRoot}</div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
+                  <Clock className="text-teal-500" size={16} />
+                  <div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase">Timestamp</div>
+                    <div className="text-xs font-bold">{selectedBlock.timestamp || "N/A"}</div>
                   </div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
+                  <Cpu className="text-teal-500" size={16} />
+                  <div>
+                    <div className="text-[9px] font-black text-slate-400 uppercase">Nonce</div>
+                    <div className="text-xs font-bold">{selectedBlock.nonce}</div>
+                  </div>
+                </div>
+              </div>
 
-                  {/* LISTE DES TRANSACTIONS */}
-                  <div className="bg-blue-600/10 p-5 rounded-xl border border-blue-500/20">
-                    <label className="text-[10px] text-blue-400 font-bold block mb-3 uppercase flex justify-between">
+              <div className="bg-teal-600/10 p-5 rounded-xl border border-teal-500/20">
+                    <label className="text-[10px] text-teal-600 font-bold block mb-3 uppercase flex justify-between">
                       <span>Transactions ({selectedBlock.transactions.length})</span>
                     </label>
 
                     <div className="max-h-40 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                       {selectedBlock.transactions.map((tx, idx) => {
-                        const sender = tx.expediteur || tx.Expediteur;
-                        const receiver = tx.destinataire || tx.Destinataire;
-                        const amount = tx.quantite || tx.Quantite;
-                        const signature = tx.signatureTx || tx.SignatureTx;
-
                         return (
-                            <div key={idx} className="flex flex-col bg-slate-900/80 p-3 rounded-lg border border-slate-700/50">
-                              <div className="flex justify-between items-center mb-2">
-                                <div className="flex flex-col w-[40%]">
-                                  <span className="text-[8px] text-slate-500 font-bold">FROM</span>
-                                  <span className="text-[10px] font-mono text-slate-300 truncate">{sender}</span>
-                                </div>
-                                <div className="flex flex-col w-[40%]">
-                                  <span className="text-[8px] text-slate-500 font-bold">TO</span>
-                                  <span className="text-[10px] font-mono text-slate-300 truncate">{receiver}</span>
-                                </div>
-                                <div className="flex flex-col items-end w-[20%]">
-                                  <span className="text-[8px] text-slate-500 font-bold">AMOUNT</span>
-                                  <span className="text-xs font-bold text-yellow-500">{amount ? amount.toFixed(2) : 0}</span>
-                                </div>
-                              </div>
-                              {signature && (
-                                  <div className="border-t border-slate-700/50 pt-2 mt-1 flex items-center gap-1">
-                                    <Shield size={10} className="text-green-500" />
-                                    <span className="text-[8px] text-green-500 font-bold uppercase block">Signature RSA Valide</span>
-                                  </div>
-                              )}
+                          <div key={idx} className="bg-teal-50/50 border border-teal-100 p-4 rounded-2xl flex justify-between items-center">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-[9px] text-teal-600 font-bold mb-1">FROM/TO</div>
+                              <div className="text-[10px] font-mono text-slate-500 truncate">{(tx.expediteur || tx.Expediteur).substring(0, 20)}...</div>
+                              <div className="text-[10px] font-mono text-slate-500 truncate">{(tx.destinataire || tx.Destinataire).substring(0, 20)}...</div>
                             </div>
+                            <div className="text-right ml-4">
+                              <div className="text-sm font-black text-teal-700">{(tx.quantite || tx.Quantite || 0).toFixed(2)} BTC</div>
+                              {(tx.signatureTx || tx.SignatureTx) && <span className="text-[8px] text-emerald-500 font-bold uppercase">Signed</span>}
+                            </div>
+                          </div>
                         );
                       })}
 
@@ -539,10 +537,10 @@ const App = () => {
                     </div>
                   </div>
 
-                </motion.div>
-              </motion.div>
-          )}
-        </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       </div>
   );
 };
