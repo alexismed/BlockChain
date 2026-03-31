@@ -14,6 +14,7 @@ export const apiAffiche = {
     miner: () => api.get("miner"),
     getBlockChain: () => api.get("all"),
     getMempool: () => api.get("mempool"), // NOUVELLE ROUTE ICI !
+    toggleMining: () => api.get("toggle"),
 
     login: (user, password) =>
         api.post(`login?user=${user}&password=${password}`),

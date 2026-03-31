@@ -8,7 +8,7 @@ public class Bloc {
     public Bloc(Header blockHeader, Body blockBody) {
         BlockHeader = blockHeader;
         BlockBody = blockBody;
-        HashBlock = "EmptyHash";
+        HashBlock = "00000f5df79a42d6e45525898813a818ce604c4692960d6f4c6b29471039ea33";
     }
 
     public Body getBlockBody() {

@@ -22,6 +22,7 @@ import java.util.Random;
 @Service
 public class BlocService {
 
+    public Boolean isMining = true;
     public List<Bloc> blockchain = new ArrayList<>();
     public List<Transaction> mempool = new ArrayList<>();
     private ObjectMapper objectMapper;
@@ -125,7 +126,10 @@ public class BlocService {
     public CoinBase genererCoinbaseTest()
     {
         Random randNumber = new Random();
-        CoinBase coinbase = new CoinBase(randNumber.nextDouble()*100 , 0);
+        CoinBase coinbase = new CoinBase(
+            genererRandomString(),
+            randNumber.nextDouble()*100 , 
+            0);
         return coinbase;
     }
 
@@ -345,6 +349,10 @@ public class BlocService {
         if(blockchain.size()<1)
         {
             blockchain.add(genererBlocTest());
+        }
+        if(!isMining) 
+        {
+            return;
         }
         Body body = genererBodyTest();
         Bloc blocPrecedent = blockchain.getLast();

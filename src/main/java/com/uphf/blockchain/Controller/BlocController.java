@@ -57,6 +57,12 @@ public class BlocController {
         return blocService.blockchain;
     }
 
+    @GetMapping("/toggle")
+    public Boolean toggleMining() {
+        blocService.isMining = !blocService.isMining;
+        return blocService.isMining;
+    }
+
     @GetMapping("/generer")
     public Bloc genererBloc() {
         blocService.remplirMempool();

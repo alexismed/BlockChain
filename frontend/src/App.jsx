@@ -33,6 +33,7 @@ const App = () => {
   const [blocks, setBlocks] = useState([]);
   const [mempool, setMempool] = useState([]); // ÉTAT POUR LE MEMPOOL
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [simActive, setSimActive] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBlock, setSelectedBlock] = useState(null);
 
@@ -67,6 +68,7 @@ const App = () => {
               timestamp: header?.timeStamp || header?.TimeStamp,
               nonce: header?.nonce || header?.Nonce,
               transactions: txList,
+              coinbase: body?.coinBaseTrans || body?.CoinBaseTrans,
             };
           });
 
@@ -175,18 +177,24 @@ const App = () => {
     return index < currentIndex ? "hiddenLeft" : "hiddenRight";
   };
 
+  const handleToggleSimulation = async () => {
+    try {
+      const res = await apiAffiche.toggleMining();
+      setSimActive(res.data);
+    } catch (err) {
+      afficherNotification("Erreur lors de l'action de minage");
+      console.error(err);
+    }
+  };
+
   return (
       <div className="flex h-screen text-black text-slate-800 overflow-hidden font-sans">
-      {/* <div className="flex h-screen bg-slate-900 text-white overflow-hidden font-sans"> */}
-      {/* <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] 
-      from-cyan-400 via-teal-500 to-emerald-600 text-slate-800 font-sans 
-      p-6 overflow-hidden flex flex-col gap-6"> */}
 
         {/* 1. PANNEAU GAUCHE : LE WALLET (25% de l'écran) */}
-        <aside className="w-1/4 border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col z-20">
-          <div className="flex items-center gap-3 mb-6 text-blue-400 font-black italic">
-            <Wallet size={24} />
-            <h2 className="text-xl uppercase tracking-widest">Mon Wallet</h2>
+        <aside className="w-1/4 bg-white/60 border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col z-20">
+          <div className="flex items-center gap-3 mb-6 text-blue-400 font-black">
+            <Wallet className="text-teal-500" size={24} />
+            <h2 className="text-xl font-black text-slate-700 uppercase tracking-widest">Mon Wallet</h2>
           </div>
 
           <div className="h-12 mb-2">
@@ -284,6 +292,50 @@ const App = () => {
         {/* 2. PANNEAU CENTRAL : EXPLORATEUR BLOCKCHAIN (50% de l'écran) */}
         <main className="w-2/4 flex flex-col items-center justify-center p-8 relative overflow-hidden">
           <div className="z-20 text-center mb-6 w-full">
+            <div 
+              role="button"
+              onClick={handleToggleSimulation}
+              className="group relative cursor-pointer transition-all duration-300 active:scale-95"
+            >
+              {/* Dynamic Glow: Changes from Emerald to Amber based on state */}
+              <div className={`absolute -inset-1 rounded-[2rem] blur opacity-25 group-hover:opacity-60 transition duration-500 ${
+                simActive 
+                  ? "bg-gradient-to-r from-orange-400 to-red-500" 
+                  : "bg-gradient-to-r from-teal-400 to-emerald-500"
+              }`}></div>
+              
+              {/* Main Button Body */}
+              <div className={`relative flex items-center justify-center gap-6 px-10 py-5 rounded-[2rem] shadow-2xl border border-white/20 transition-colors duration-500 ${
+                simActive 
+                  ? "bg-gradient-to-r from-orange-500 to-red-600" 
+                  : "bg-gradient-to-r from-teal-500 to-emerald-600"
+              }`}>
+                
+                {/* Icon Container with state-based animation */}
+                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md shadow-inner">
+                  <Cpu 
+                    className={`text-white ${simActive ? "animate-spin" : "animate-pulse"}`} 
+                    size={32} 
+                  />
+                </div>
+                
+                <div className="flex flex-col items-start min-w-[160px]">
+                  <span className="text-xl font-black text-white tracking-tight uppercase">
+                    {simActive ? "Arreter Simulation" : "Activer Simulation"}
+                  </span>
+                </div>
+
+                {/* Status Indicator Light */}
+                <div className={`ml-2 px-3 py-1 rounded-full border border-white/20 ${
+                  simActive ? "bg-red-400/40" : "bg-emerald-400/30"
+                }`}>
+                  <div className={`w-2.5 h-2.5 rounded-full ${
+                    simActive ? "bg-white animate-ping" : "bg-white/50"
+                  }`}></div>
+                </div>
+              </div>
+            </div>
+            
             <div className="flex items-center justify-center gap-2 mb-4">
               <Database className="text-teal-500" size={28} />
               <h1 className="text-3xl font-black tracking-tighter text-blue uppercase">
@@ -347,10 +399,14 @@ const App = () => {
                       </div>
 
                       <div>
-                        <div className="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-1">Block Hash</div>
-                        <div className="font-mono text-[9px] break-all text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-xl">
-                            {block.hash}
+                        <div className="text-[15px] uppercase font-black text-slate-400 tracking-widest mb-1">Hash Block</div>
+                        <div className="font-mono text-[12px] break-all text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-xl">
+                            {(block.hash).substring(0, 10)}...{(block.hash).substring(60)}
                         </div>
+                      </div>
+                      
+                      <div className="text-[15px] uppercase font-black text-slate-400 tracking-widest mb-1">
+                        Transactions: {block.transactions.length}
                       </div>
 
                       <div className="flex items-center justify-between border-t border-slate-100 pt-4">
@@ -402,17 +458,17 @@ const App = () => {
         </main>
 
         {/* 3. PANNEAU DROITE : LE MEMPOOL EN DIRECT (25% de l'écran) */}
-        <aside className="w-1/4 border-l border-slate-700 bg-slate-800/50 p-6 flex flex-col z-20">
-          <div className="flex items-center gap-3 mb-6 text-yellow-500 font-black italic">
+        <aside className="w-1/4 bg-white/60 border-l border-slate-700 bg-slate-800/50 p-6 flex flex-col z-20">
+          <div className="flex items-center gap-3 mb-6 text-teal-500 font-black ">
             <Cpu size={24} />
             <h2 className="text-xl uppercase tracking-widest">Mempool</h2>
           </div>
 
           <div className="flex items-center justify-between mb-4">
-            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+            <span className="text-[10px] text-slate-800 font-bold uppercase tracking-wider">
                En attente de validation
             </span>
-            <span className="bg-yellow-500/20 text-yellow-500 text-[10px] px-2 py-0.5 rounded font-black">
+            <span className="bg-yellow-500/20 text-teal-600 text-[10px] px-2 py-0.5 rounded font-black">
                {mempool.length} TX
             </span>
           </div>
@@ -420,7 +476,7 @@ const App = () => {
           <div className="space-y-3 overflow-y-auto pr-2 custom-scrollbar flex-1">
             <AnimatePresence initial={false}>
               {mempool.length === 0 ? (
-                  <div className="text-xs text-slate-500 italic text-center mt-10">Aucune transaction en attente...</div>
+                  <div className="text-xs text-slate-800 italic text-center mt-10">Aucune transaction en attente...</div>
               ) : (
                   mempool.map((tx, i) => {
                     const sender = tx.expediteur || tx.Expediteur;
@@ -434,24 +490,24 @@ const App = () => {
                             initial={{ opacity: 0, x: 30 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="p-3 bg-slate-900 border border-slate-700 rounded-xl hover:border-yellow-500/50 transition-all group"
+                            className="p-3 bg-yellow-500/20 bg-slate-900 border border-slate-700 rounded-xl hover:border-yellow-500/50 transition-all group"
                         >
                           <div className="flex justify-between items-center mb-3">
-                                <span className="text-sm font-black text-white">
+                                <span className="text-sm font-black text-teal-600">
                                     {amount ? amount.toFixed(4) : "0.00"} BTC
                                 </span>
                             {isSigned && (
                                 <Shield size={14} className="text-green-500" title="Signé cryptographiquement" />
                             )}
                           </div>
-                          <div className="space-y-1.5 border-t border-slate-700/50 pt-2">
+                          <div className="space-y-1.5 border-t border-slate-700 pt-2">
                             <div className="flex items-center gap-2 overflow-hidden">
-                              <span className="text-[8px] text-slate-500 font-bold w-6">FROM:</span>
-                              <span className="text-[9px] font-mono text-slate-400 truncate">{sender}</span>
+                              <span className="text-[8px] text-slate-800 font-bold w-6">FROM:</span>
+                              <span className="text-[9px] font-mono text-slate-700 truncate">{sender}</span>
                             </div>
                             <div className="flex items-center gap-2 overflow-hidden">
-                              <span className="text-[8px] text-slate-500 font-bold w-6">TO:</span>
-                              <span className="text-[9px] font-mono text-slate-400 truncate">{receiver}</span>
+                              <span className="text-[8px] text-slate-800 font-bold w-6">TO:</span>
+                              <span className="text-[9px] font-mono text-slate-700 truncate">{receiver}</span>
                             </div>
                           </div>
                         </motion.div>
@@ -486,12 +542,74 @@ const App = () => {
 
               <div className="grid grid-cols-2 gap-4 mb-8">
                 <div className="col-span-2 bg-slate-50 p-4 rounded-2xl">
-                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Hash Précédent</label>
-                  <div className="font-mono text-[10px] text-slate-600 break-all">{selectedBlock.prevHash}</div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Hash Block</label>
+                  <div className="flex items-center gap-3">
+                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">{selectedBlock.hash}</div>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedBlock.hash);
+                        afficherNotification("Hash copied to clipboard!");
+                      }}
+                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
+                      title="Copier Hash"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div className="col-span-2 bg-slate-50 p-4 rounded-2xl">
+                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Mineur</label>
+                  <div className="flex items-center gap-3">
+                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
+                      {(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur)}
+                    </div>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur);
+                        afficherNotification("Hash copied to clipboard!");
+                      }}
+                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
+                      title="Copier Adresse"
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Hash Précédent</label>
+                  <div className="flex items-center gap-3">
+                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
+                      {(selectedBlock.prevHash).substring(0, 5)}...{(selectedBlock.prevHash).substring(60)}
+                    </div>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedBlock.prevHash);
+                        afficherNotification("Hash copied to clipboard!");
+                      }}
+                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
+                      title={selectedBlock.prevHash}
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Merkle Root</label>
-                  <div className="font-mono text-[10px] text-slate-600 break-all">{selectedBlock.merkleRoot}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
+                      {(selectedBlock.merkleRoot).substring(0, 5)}...{(selectedBlock.merkleRoot).substring(60)}
+                    </div>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedBlock.merkleRoot);
+                        afficherNotification("Hash copied to clipboard!");
+                      }}
+                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
+                      title={selectedBlock.merkleRoot}
+                    >
+                      <Copy size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
                   <Clock className="text-teal-500" size={16} />
