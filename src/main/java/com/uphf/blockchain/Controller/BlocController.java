@@ -113,6 +113,7 @@ public class BlocController {
 
     @GetMapping("/8")
     public void clear(){
+        blocService.isMining = false;
         blocService.userList.clear();
         blocService.blockchain.clear();
         blocService.mempool.clear();

@@ -576,6 +576,7 @@ public class BlocService {
             return;
         }
         int destinataire = choisirUtilisateur();
+        if(expediteur == destinataire) return;
         Random randNumber = new Random();
         double quantite = randNumber.nextDouble()*solde;
         double frais = randNumber.nextDouble()*quantite;

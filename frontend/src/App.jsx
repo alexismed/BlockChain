@@ -1,3 +1,6 @@
+import Mining from "./Components/Mining";
+import Explorer from "./Components/Explorer";
+import Accounts from "./Components/Accounts";
 import React, { useState, useEffect } from "react";
 import {
   ChevronLeft,
@@ -30,6 +33,7 @@ const blockVariants = {
 };
 
 const App = () => {
+  const [activeTab, setActiveTab] = useState("Explorer");
   const [blocks, setBlocks] = useState([]);
   const [mempool, setMempool] = useState([]); // ÉTAT POUR LE MEMPOOL
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -191,270 +195,87 @@ const App = () => {
       <div className="flex h-screen text-black text-slate-800 overflow-hidden font-sans">
 
         {/* 1. PANNEAU GAUCHE : LE WALLET (25% de l'écran) */}
-        <aside className="w-1/4 bg-white/60 border-r border-slate-700 bg-slate-800/50 p-6 flex flex-col z-20">
-          <div className="flex items-center gap-3 mb-6 text-blue-400 font-black">
-            <Wallet className="text-teal-500" size={24} />
-            <h2 className="text-xl font-black text-slate-700 uppercase tracking-widest">Mon Wallet</h2>
+        <aside className="w-1/4 bg-white/60 border-r border-white/20 backdrop-blur-xl p-8 flex flex-col z-20 shadow-2xl overflow-y-auto">
+          {/* Brand Header */}
+          <div className="flex items-center gap-4 mb-12">
+            <div>
+              <h2 className="text-[40px] font-black text-teal-600 text-slate-800 leading-none">Projet Blockchain</h2>
+            </div>
           </div>
 
-          <div className="h-12 mb-2">
-            <AnimatePresence>
-              {notification && (
-                  <motion.div
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      className="p-3 text-xs font-bold text-center bg-blue-600/20 text-blue-300 border border-blue-500/30 rounded-xl"
-                  >
-                    {notification}
-                  </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {!token ? (
-              <form onSubmit={handleLogin} className="flex flex-col gap-4 bg-slate-900/50 p-6 rounded-2xl border border-slate-700 shadow-xl">
-                <h3 className="text-xs font-bold text-slate-400 flex items-center gap-2 mb-2 uppercase tracking-widest">
-                  <Lock size={14}/> Authentification
-                </h3>
-                <input
-                    className="bg-slate-800 p-3 rounded-xl border border-slate-600 text-sm outline-none focus:border-blue-500 transition-colors"
-                    placeholder="Nom d'utilisateur"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                />
-                <input
-                    type="password"
-                    className="bg-slate-800 p-3 rounded-xl border border-slate-600 text-sm outline-none focus:border-blue-500 transition-colors"
-                    placeholder="Mot de passe"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit" className="bg-blue-600 hover:bg-blue-500 p-3 rounded-xl font-black uppercase tracking-widest transition-all text-xs mt-2">
-                  Connexion
-                </button>
-              </form>
-          ) : (
-              <div className="flex flex-col h-full overflow-y-auto pr-2 custom-scrollbar">
-                <div className="bg-gradient-to-br from-blue-900 to-slate-800 border border-blue-500/30 p-5 rounded-2xl mb-4 shadow-lg text-center relative overflow-hidden">
-                  <div className="text-[10px] text-blue-300 font-bold uppercase tracking-widest mb-1">Solde Disponible</div>
-                  <div className="text-3xl font-black text-white">{solde.toFixed(2)} <span className="text-sm text-blue-400">BTC</span></div>
-                  <button onClick={handleAjouterFonds} className="mt-4 w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 p-2 rounded-xl text-xs font-bold flex justify-center items-center gap-2 text-slate-300 transition-colors">
-                    <PlusCircle size={14} className="text-green-400"/> Recevoir fonds
-                  </button>
+          {/* Navigation Menu */}
+          <nav className="flex-1 flex flex-col gap-3">
+            {[
+              { title: "Basics", icon: <Search size={20} /> },
+              { title: "Accounts", icon: <Lock size={20} /> },
+              { title: "Mining", icon: <PlusCircle size={20} /> },
+              { title: "Explorer", icon: <Database size={20} /> },
+              { title: "Balances", icon: <Wallet size={20} /> },
+              { title: "Consensus", icon: <Shield size={20} /> },
+            ].map((item, index) => (
+              <button
+                onClick={() => setActiveTab(item.title)}
+                key={index}
+                className="flex items-center gap-4 w-full p-4 rounded-2xl transition-all duration-300 group
+                          hover:bg-white hover:shadow-xl hover:shadow-teal-500/5 border border-transparent hover:border-teal-100 hover:translate-x-1"
+              >
+                {/* Tab Icon */}
+                <div className="p-2 rounded-xl bg-slate-50 group-hover:bg-teal-50 text-slate-400 group-hover:text-teal-600 transition-colors">
+                  {item.icon}
                 </div>
+                
+                {/* Tab Label */}
+                <span className="text-sm font-bold text-slate-600 group-hover:text-slate-900 transition-colors">
+                  {item.title}
+                </span>
 
-                <div className="bg-yellow-500/10 border border-yellow-500/30 p-4 rounded-xl mb-4 flex flex-col gap-2">
-                  <div className="text-[10px] text-yellow-500 font-bold uppercase">Adresse de test (Bob)</div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-[10px] font-mono text-slate-300 truncate bg-slate-900 p-2 rounded-lg flex-1">
-                      {adresseTest}
-                    </div>
-                    <button onClick={handleCopyAddress} title="Copier" className="bg-yellow-600 hover:bg-yellow-500 p-2 rounded-lg text-white transition-colors">
-                      <Copy size={12} />
-                    </button>
-                  </div>
+                {/* Hover Indicator */}
+                <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-1.5 h-1.5 bg-teal-500 rounded-full"></div>
                 </div>
+              </button>
+            ))}
+          </nav>
 
-                <form onSubmit={handleSendTransaction} className="flex flex-col gap-3 bg-slate-900/50 p-5 rounded-2xl border border-slate-700 shadow-xl">
-                  <h3 className="text-xs font-black text-blue-400 flex items-center gap-2 uppercase tracking-widest">
-                    <Send size={14}/> Envoyer
-                  </h3>
-                  <input
-                      className="bg-slate-800 p-3 rounded-xl border border-slate-600 text-xs outline-none focus:border-blue-500 font-mono transition-colors"
-                      placeholder="Adresse du destinataire"
-                      value={destinataire}
-                      onChange={(e) => setDestinataire(e.target.value)}
-                  />
-                  <div className="relative">
-                    <input
-                        type="number"
-                        step="0.01"
-                        className="w-full bg-slate-800 p-3 rounded-xl border border-slate-600 text-xs outline-none focus:border-blue-500 font-mono transition-colors"
-                        placeholder="Montant"
-                        value={montant}
-                        onChange={(e) => setMontant(e.target.value)}
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-500">BTC</span>
-                  </div>
-                  <button type="submit" className="bg-blue-600 hover:bg-blue-500 p-3 rounded-xl font-black uppercase tracking-widest transition-all text-xs mt-1 flex justify-center items-center gap-2">
-                    <Shield size={12} /> Signer & Envoyer
-                  </button>
-                </form>
-
-                <button onClick={handleLogout} className="mt-6 mb-4 flex items-center justify-center gap-2 text-slate-500 hover:text-red-400 p-2 text-xs font-bold transition-colors">
-                  <LogOut size={14}/> Se Déconnecter
-                </button>
+          {/* Status Info Footer */}
+          <div className="mt-8 pt-8 border-t border-slate-100">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Nombre de blocs</span>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
               </div>
-          )}
+              <div className="text-[15px] font-bold text-slate-700">{blocks.length}</div>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Temps moyen de création</span>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+              </div>
+              <div className="text-[15px] font-bold text-slate-700">All Nodes Synced</div>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Difficulté Actuelle</span>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
+              </div>
+              <div className="text-[15px] font-bold text-slate-700">All Nodes Synced</div>
+            </div>
+          </div>
         </aside>
 
         {/* 2. PANNEAU CENTRAL : EXPLORATEUR BLOCKCHAIN (50% de l'écran) */}
         <main className="w-2/4 flex flex-col items-center justify-center p-8 relative overflow-hidden">
-          <div className="z-20 text-center mb-6 w-full">
-            <div 
-              role="button"
-              onClick={handleToggleSimulation}
-              className="group relative cursor-pointer transition-all duration-300 active:scale-95"
-            >
-              {/* Dynamic Glow: Changes from Emerald to Amber based on state */}
-              <div className={`absolute -inset-1 rounded-[2rem] blur opacity-25 group-hover:opacity-60 transition duration-500 ${
-                simActive 
-                  ? "bg-gradient-to-r from-orange-400 to-red-500" 
-                  : "bg-gradient-to-r from-teal-400 to-emerald-500"
-              }`}></div>
-              
-              {/* Main Button Body */}
-              <div className={`relative flex items-center justify-center gap-6 px-10 py-5 rounded-[2rem] shadow-2xl border border-white/20 transition-colors duration-500 ${
-                simActive 
-                  ? "bg-gradient-to-r from-orange-500 to-red-600" 
-                  : "bg-gradient-to-r from-teal-500 to-emerald-600"
-              }`}>
-                
-                {/* Icon Container with state-based animation */}
-                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md shadow-inner">
-                  <Cpu 
-                    className={`text-white ${simActive ? "animate-spin" : "animate-pulse"}`} 
-                    size={32} 
-                  />
-                </div>
-                
-                <div className="flex flex-col items-start min-w-[160px]">
-                  <span className="text-xl font-black text-white tracking-tight uppercase">
-                    {simActive ? "Arreter Simulation" : "Activer Simulation"}
-                  </span>
-                </div>
 
-                {/* Status Indicator Light */}
-                <div className={`ml-2 px-3 py-1 rounded-full border border-white/20 ${
-                  simActive ? "bg-red-400/40" : "bg-emerald-400/30"
-                }`}>
-                  <div className={`w-2.5 h-2.5 rounded-full ${
-                    simActive ? "bg-white animate-ping" : "bg-white/50"
-                  }`}></div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Database className="text-teal-500" size={28} />
-              <h1 className="text-3xl font-black tracking-tighter text-blue uppercase">
-                BlockChain Explorer
-              </h1>
-            </div>
+          {activeTab === "Accounts" && <Accounts />}
+          {activeTab === "Mining" && (
+            <Mining 
+              isMining={simActive} 
+              onToggle={handleToggleSimulation} 
+            />
+          )}
+          {activeTab === "Explorer" && <Explorer />}
 
-            <form onSubmit={handleSearch} className="flex bg-white/90 p-1 rounded-2xl shadow-xl w-72 border border-teal-100 mx-auto mb-4">
-              <input
-                type="text"
-                placeholder="Block Index..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-transparent px-4 py-2 text-xs outline-none flex-1"
-              />
-              <button className="bg-teal-500 text-white p-2 rounded-xl">
-                <Search size={16} />
-              </button>
-            </form>
-
-            <div className="text-slate-500 text-[10px] flex items-center justify-center gap-2 animate-pulse">
-              <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div> Réception des blocs...
-            </div>
-          </div>
-
-          <div className="relative w-full h-[400px] flex items-center justify-center">
-            {blocks.length === 0 ? (
-                <div className="text-slate-500 font-mono text-sm animate-pulse">Chargement de la blockchain...</div>
-            ) : (
-              <AnimatePresence mode="popLayout" initial={false}>
-                {blocks.map((block, i) => {
-                  const pos = getBlockPosition(i);
-                  if (pos.includes("hidden") && Math.abs(i - currentIndex) > 1) return null;
-
-                  return (
-                    <motion.div
-                      key={block.index}
-                      variants={blockVariants}
-                      animate={pos}
-                      initial={pos.includes("Left") ? "hiddenLeft" : "hiddenRight"}
-                      exit={pos.includes("Left") ? "hiddenLeft" : "hiddenRight"}
-                      transition={{ type: "spring", stiffness: 200, damping: 25 }}
-                      onClick={() => pos === "center" && setSelectedBlock(block)}
-                      className={`absolute w-72 h-80 rounded-[3rem] p-8 shadow-2xl flex flex-col justify-between border-2 transition-all cursor-pointer 
-                      ${
-                        i === blocks.length - 1
-                          ? "bg-teal-200 border-teal-200 scale-100"
-                          : pos === "center"
-                            ? "bg-white border-teal-200 scale-100"
-                            : "bg-white/40 border-white/20 opacity-50 scale-90"
-                      }
-                      `}
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="bg-teal-500 text-white px-4 py-1 rounded-full text-[20px] font-black">
-                          {
-                            i === 0 ? "Genesis" : "Block #" + block.index
-                          }
-                        </div>
-                        <Database className="text-teal-200" size={32} />
-                      </div>
-
-                      <div>
-                        <div className="text-[15px] uppercase font-black text-slate-400 tracking-widest mb-1">Hash Block</div>
-                        <div className="font-mono text-[12px] break-all text-slate-600 leading-relaxed bg-slate-50 p-2 rounded-xl">
-                            {(block.hash).substring(0, 10)}...{(block.hash).substring(60)}
-                        </div>
-                      </div>
-                      
-                      <div className="text-[15px] uppercase font-black text-slate-400 tracking-widest mb-1">
-                        Transactions: {block.transactions.length}
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                        <div className="flex flex-col">
-                            <span className="text-[8px] font-bold text-slate-400 uppercase">Status</span>
-                            <span className="text-[10px] font-bold text-emerald-500 flex items-center gap-1">
-                              <Shield size={10} /> Validated
-                            </span>
-                        </div>
-                        <ChevronRight className="text-teal-500" />
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            )}
-          </div>
-
-          <div className="absolute bottom-10 flex gap-4">
-            <button
-                onClick={moveFirst}
-                disabled={currentIndex === 0 || blocks.length === 0}
-                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
-            >
-              <ChevronsLeft size={24} />
-            </button>
-            <button
-                onClick={movePrev}
-                disabled={currentIndex === 0 || blocks.length === 0}
-                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-                onClick={moveNext}
-                disabled={currentIndex === blocks.length - 1 || blocks.length === 0}
-                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
-            >
-              <ChevronRight size={24} />
-            </button>
-            <button
-                onClick={moveLast}
-                disabled={currentIndex === blocks.length - 1 || blocks.length === 0}
-                className="p-4 bg-white hover:bg-teal-50 disabled:opacity-5 text-teal-600 rounded-2xl shadow-lg border border-teal-100 transition-all active:scale-90"
-             >
-              <ChevronsRight size={24} />
-            </button>
-          </div>
+          
         </main>
 
         {/* 3. PANNEAU DROITE : LE MEMPOOL EN DIRECT (25% de l'écran) */}
@@ -482,6 +303,7 @@ const App = () => {
                     const sender = tx.expediteur || tx.Expediteur;
                     const receiver = tx.destinataire || tx.Destinataire;
                     const amount = tx.quantite || tx.Quantite;
+                    const frais = tx.frais || tx.Frais;
                     const isSigned = tx.signatureTx || tx.SignatureTx;
 
                     return (
@@ -496,9 +318,9 @@ const App = () => {
                                 <span className="text-sm font-black text-teal-600">
                                     {amount ? amount.toFixed(4) : "0.00"} BTC
                                 </span>
-                            {isSigned && (
-                                <Shield size={14} className="text-green-500" title="Signé cryptographiquement" />
-                            )}
+                                <span className="text-sm font-black text-green-600">
+                                    Frais: {amount ? frais.toFixed(4) : "0.00"} BTC
+                                </span>
                           </div>
                           <div className="space-y-1.5 border-t border-slate-700 pt-2">
                             <div className="flex items-center gap-2 overflow-hidden">
@@ -519,146 +341,7 @@ const App = () => {
         </aside>
 
         {/* --- MODALE HEADER DU BLOC --- */}
-        <AnimatePresence>
-        {selectedBlock && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-teal-900/40 backdrop-blur-md flex items-center justify-center z-50 p-6"
-            onClick={() => setSelectedBlock(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }}
-              className="bg-white rounded-[3rem] p-10 w-full max-w-2xl shadow-2xl relative max-h-[85vh] overflow-y-auto"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button onClick={() => setSelectedBlock(null)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-800 transition-colors">
-                <X size={24} />
-              </button>
-              
-              <h3 className="text-2xl font-black text-slate-800 mb-8 flex items-center gap-3">
-                <div className="bg-teal-500 p-2 rounded-xl text-white"><Shield size={24} /></div>
-                Details: Block {selectedBlock.index === 0 ? "Genesis" : "#" + selectedBlock.index}
-              </h3>
-
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="col-span-2 bg-slate-50 p-4 rounded-2xl">
-                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Hash Block</label>
-                  <div className="flex items-center gap-3">
-                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">{selectedBlock.hash}</div>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedBlock.hash);
-                        afficherNotification("Hash copied to clipboard!");
-                      }}
-                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
-                      title="Copier Hash"
-                    >
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="col-span-2 bg-slate-50 p-4 rounded-2xl">
-                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Mineur</label>
-                  <div className="flex items-center gap-3">
-                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
-                      {(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur)}
-                    </div>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur);
-                        afficherNotification("Hash copied to clipboard!");
-                      }}
-                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
-                      title="Copier Adresse"
-                    >
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Hash Précédent</label>
-                  <div className="flex items-center gap-3">
-                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
-                      {(selectedBlock.prevHash).substring(0, 5)}...{(selectedBlock.prevHash).substring(60)}
-                    </div>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedBlock.prevHash);
-                        afficherNotification("Hash copied to clipboard!");
-                      }}
-                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
-                      title={selectedBlock.prevHash}
-                    >
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
-                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Merkle Root</label>
-                  <div className="flex items-center gap-3">
-                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
-                      {(selectedBlock.merkleRoot).substring(0, 5)}...{(selectedBlock.merkleRoot).substring(60)}
-                    </div>
-                    <button 
-                      onClick={() => {
-                        navigator.clipboard.writeText(selectedBlock.merkleRoot);
-                        afficherNotification("Hash copied to clipboard!");
-                      }}
-                      className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
-                      title={selectedBlock.merkleRoot}
-                    >
-                      <Copy size={14} />
-                    </button>
-                  </div>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
-                  <Clock className="text-teal-500" size={16} />
-                  <div>
-                    <div className="text-[9px] font-black text-slate-400 uppercase">Timestamp</div>
-                    <div className="text-xs font-bold">{selectedBlock.timestamp || "N/A"}</div>
-                  </div>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
-                  <Cpu className="text-teal-500" size={16} />
-                  <div>
-                    <div className="text-[9px] font-black text-slate-400 uppercase">Nonce</div>
-                    <div className="text-xs font-bold">{selectedBlock.nonce}</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-teal-600/10 p-5 rounded-xl border border-teal-500/20">
-                    <label className="text-[10px] text-teal-600 font-bold block mb-3 uppercase flex justify-between">
-                      <span>Transactions ({selectedBlock.transactions.length})</span>
-                    </label>
-
-                    <div className="max-h-40 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                      {selectedBlock.transactions.map((tx, idx) => {
-                        return (
-                          <div key={idx} className="bg-teal-50/50 border border-teal-100 p-4 rounded-2xl flex justify-between items-center">
-                            <div className="flex-1 min-w-0">
-                              <div className="text-[9px] text-teal-600 font-bold mb-1">FROM/TO</div>
-                              <div className="text-[10px] font-mono text-slate-500 truncate">{(tx.expediteur || tx.Expediteur).substring(0, 20)}...</div>
-                              <div className="text-[10px] font-mono text-slate-500 truncate">{(tx.destinataire || tx.Destinataire).substring(0, 20)}...</div>
-                            </div>
-                            <div className="text-right ml-4">
-                              <div className="text-sm font-black text-teal-700">{(tx.quantite || tx.Quantite || 0).toFixed(2)} BTC</div>
-                              {(tx.signatureTx || tx.SignatureTx) && <span className="text-[8px] text-emerald-500 font-bold uppercase">Signed</span>}
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {selectedBlock.transactions.length === 0 && (
-                          <div className="text-sm text-slate-500 italic text-center py-4">Aucune transaction dans ce bloc</div>
-                      )}
-                    </div>
-                  </div>
-
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        
       </div>
   );
 };
