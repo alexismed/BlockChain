@@ -16,15 +16,19 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 
 @Service
 public class BlocService {
 
-    public Boolean isMining = true;
+    public Boolean isMining = false;
     public List<Bloc> blockchain = new ArrayList<>();
     public List<Transaction> mempool = new ArrayList<>();
+    public List<String> userList = new ArrayList<>();
     private ObjectMapper objectMapper;
     private final String FILE_NAME_BLOCKCHAIN = "blockchain.json";
     private final String FILE_NAME_MEMPOOL = "mempool.json";
@@ -72,10 +76,12 @@ public class BlocService {
 
     public void remplirMempool()
     {
-        while(mempool.size() < 100)
+        for(int i = 0; i < (2 * userList.size()) ; i++ )
         {
-            mempool.add(genererTransactionTest());
+            if(mempool.size() >= 200) break;
+            ajouterTransaction();
         }
+        Collections.sort(mempool, new SortByFee());
     }
 
     public Bloc genererBlocTest()
@@ -133,6 +139,7 @@ public class BlocService {
         return coinbase;
     }
 
+
     public Body genererBodyTest()
     {
         List<Transaction> transList = new ArrayList<>();
@@ -141,6 +148,7 @@ public class BlocService {
         {
             transList.add(mempool.get(i));
         }
+        Collections.sort(transList, new SortByFee());
         Body body = new Body(genererCoinbaseTest() , transList);
         return body;
     }
@@ -156,6 +164,7 @@ public class BlocService {
 
     public void afficherCoinbase(CoinBase coinBase){
         System.out.println("  COINBASE:");
+        System.out.println("   Mineur:" + coinBase.getMineur());
         System.out.println("   Recompense:" + String.format("%.9f", coinBase.getRecompense()));
         System.out.println("   ExtraNonce:" + String.valueOf(coinBase.getExtraNonce()));
     }
@@ -164,6 +173,7 @@ public class BlocService {
         System.out.println("    Expediteur:" + transaction.getExpediteur());
         System.out.println("    Destinataire:" + transaction.getDestinataire());
         System.out.println("    Quantite:" + String.format("%.9f", transaction.getQuantite()));
+        System.out.println("    Frais:" + String.format("%.9f", transaction.getFrais()));
     }
 
     public void afficherBody(Body body){
@@ -217,7 +227,8 @@ public class BlocService {
     }
 
     public String hasherCoinBase(CoinBase coinBase) {
-       String result = String.format("%.9f", coinBase.getRecompense());
+       String result = coinBase.getMineur();
+       result += String.format("%.9f", coinBase.getRecompense());
        result += String.valueOf(coinBase.getExtraNonce());
        return hasher(result);
     }
@@ -226,6 +237,7 @@ public class BlocService {
     {
         String result = hasherCoinBase(body.getCoinBaseTrans());
         List<Transaction> transList = body.getTransactionList();
+        if(transList.size()<1) return result;
         result += trouverMerkle(transList, 0, transList.size()-1);
         return hasher(result);
     }
@@ -255,10 +267,7 @@ public class BlocService {
     public String hasherHeader (Header header){
         String result = header.getHashPre() + String.valueOf(header.getNonce());
         result=hasher(result);
-        result += header.getTimeStamp().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         result += header.getMerkleRoot();
-        result = hasher(result);
-        result += header.getTarget();
         return hasher(result);
     }
 
@@ -306,7 +315,7 @@ public class BlocService {
         return true;
     }
 
-    public boolean consensus(Bloc bloc){
+    public boolean proofOfWork(Bloc bloc){
         Header header = bloc.getBlockHeader();
         for(int i = 0 ; i<Integer.MAX_VALUE ; i++){
             header.setNonce(i);
@@ -327,7 +336,7 @@ public class BlocService {
         header.setMerkleRoot(merkleroot);
         bloc.setBlockHeader(header);
 
-        return consensus(bloc);
+        return proofOfWork(bloc);
 
     }
     public boolean validerHash(String hash , int target){
@@ -345,6 +354,8 @@ public class BlocService {
     @Scheduled(fixedRate = 10)
     public void minerBloc()
     {
+        if(true)
+            return;
         chargerDepuisJson();
         if(blockchain.size()<1)
         {
@@ -365,7 +376,7 @@ public class BlocService {
                 5,
             0);
         Bloc newBloc = new Bloc(header,body);
-        if(consensus(newBloc))
+        if(proofOfWork(newBloc))
         {
             blockchain.add(newBloc);
             sauvegarderEnJson();
@@ -388,7 +399,7 @@ public class BlocService {
         header.setMerkleRoot(merkleroot);
         bloc.setBlockHeader(header);
         afficherBlock(bloc);
-        consensus(bloc);
+        proofOfWork(bloc);
         afficherHeader(bloc.getBlockHeader());
         System.out.println("Hash de bloc = " + hasherHeader(bloc.getBlockHeader()));
     }
@@ -487,8 +498,167 @@ public class BlocService {
         blocList.removeLast();
     }
 
+    @Scheduled(fixedRate = 10)
+    public void simulateBlockChain()
+    {
+        if(!isMining)return;
+        // Create Body 
+        int indexMineur = choisirUtilisateur();
+        List<Transaction> transList = choisirTransactions();
+        int halving = blockchain.size() / 100;
+        double recompense = 50.0;
+        while(halving>0)
+        {
+            recompense /= 2.0;
+            halving--;
+        }
+        CoinBase coinbase = new CoinBase(
+            userList.get(indexMineur),
+            recompense, 
+            0);
+        Body body = new Body(coinbase , transList);
+        
+        // Create Header
+        String hashPrecedent = "-";
+        if(blockchain.size()>0)
+        {
+            Bloc blocPrecedent = blockchain.getLast();
+            hashPrecedent = blocPrecedent.getHashBlock();
+        }
+        String merkleRoot = hasherBody(body);
+        int target = blockchain.size() < 1000 ? 2 : 5;
+        Header header = new Header(
+            merkleRoot, 
+            LocalDateTime.now(),
+            hashPrecedent,
+                target,
+            0);
+        Bloc newBlock = new Bloc(header,body);
+
+        // Find Nonce 
+        if(proofOfWork(newBlock))
+        {
+            blockchain.add(newBlock);
+        }
+        remplirMempool();
+        sauvegarderEnJson();
+    }
+
+    int choisirUtilisateur()
+    {
+        Random randomNumbers = new Random();
+        int index = randomNumbers.nextInt(userList.size() + 1);
+        if(index == userList.size() && index < 2000)
+        {
+            userList.add(genererRandomString());
+        }
+        if(index == 2000) return index - 1;
+        return index;
+    }
+
+    List<Transaction> choisirTransactions()
+    {
+        List<Transaction> transactions = new ArrayList<>();
+        while(mempool.size()>0 && transactions.size()<=100)
+        {
+            transactions.add(mempool.get(0));
+            mempool.remove(0);
+        }
+        return transactions;
+    }
+
+    void ajouterTransaction()
+    {
+        int expediteur = choisirUtilisateur();
+        double solde = obtenirSolde(expediteur);
+        if(solde < 0.05)
+        {
+            return;
+        }
+        int destinataire = choisirUtilisateur();
+        Random randNumber = new Random();
+        double quantite = randNumber.nextDouble()*solde;
+        double frais = randNumber.nextDouble()*quantite;
+        if(quantite + frais > solde)
+        {
+            quantite = quantite / 3.0;
+            frais = frais / 3.0;
+        }
+        Transaction transaction = new Transaction(
+            userList.get(expediteur), 
+            userList.get(destinataire), 
+            quantite,
+            frais
+        );
+        mempool.add(transaction);
+    }
 
 
+    public double obtenirSolde(int index)
+    {
+        double solde = 0.0;
+        String adresse = userList.get(index);
+        List<Transaction> transactions = new ArrayList<>(); 
+        List<CoinBase> coinbaseTrans = new ArrayList<>();
+
+        for(Bloc block : blockchain)
+        {
+            Body body = block.getBlockBody();
+            CoinBase coinBase = body.getCoinBaseTrans();
+            if(coinBase.getMineur() == adresse)
+            {
+                coinbaseTrans.add(coinBase);
+            }
+            List<Transaction> transList = body.getTransactionList();
+            for(Transaction transaction : transList)
+            {
+                if(
+                    transaction.getExpediteur() == adresse ||
+                    transaction.getDestinataire() == adresse
+                ){
+                    transactions.add(transaction);
+                }
+            } 
+        }
+
+        for (CoinBase transaction : coinbaseTrans)
+        {
+            if(transaction.getMineur() == adresse)
+            {
+                solde += transaction.getRecompense();
+            }
+        }
+        for (Transaction transaction : transactions)
+        {
+            if(transaction.getExpediteur() == adresse)
+            {
+                solde -= (transaction.getQuantite() + transaction.getFrais());
+            }
+            if(transaction.getDestinataire() == adresse)
+            {
+                solde += transaction.getQuantite();
+            }
+        }
+        for (Transaction transaction : mempool)
+        {
+            if(transaction.getExpediteur() == adresse)
+            {
+                solde -= (transaction.getQuantite() + transaction.getFrais());
+            }
+            if(transaction.getDestinataire() == adresse)
+            {
+                solde += transaction.getQuantite();
+            }
+        }
+        return solde;
+    }
+
+}
+
+class SortByFee implements Comparator<Transaction>{
+    public int compare(Transaction t1, Transaction t2){    
+        return Double.compare(t2.getFrais(),t1.getFrais());
+    }
 }
 
 

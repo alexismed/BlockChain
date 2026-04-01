@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -77,7 +78,7 @@ public class BlocController {
                 0, bloc.getBlockBody().getTransactionList().size() - 1
         );
         bloc.getBlockHeader().setMerkleRoot(merkleroot);
-        blocService.consensus(bloc);
+        blocService.proofOfWork(bloc);
         blocService.blockchain.add(bloc);
         blocService.sauvegarderEnJson();
         return bloc;
@@ -93,6 +94,32 @@ public class BlocController {
         blocService.remplirMempool();
         blocService.test4();
     }
+
+    @GetMapping("/5")
+    public void afficher5(){
+        blocService.remplirMempool();
+        Bloc test = blocService.genererBlocTest();
+        blocService.afficherBlock(test);
+    }
+
+    @GetMapping("/7")
+    public void toggle(){
+        blocService.isMining = !blocService.isMining;
+        System.out.println("isMining:" + blocService.isMining);
+        System.out.println("Users:" + blocService.userList.size());
+        System.out.println("Blocks:" + blocService.blockchain.size());
+        System.out.println("Txs:" + blocService.mempool.size());
+    }
+
+    @GetMapping("/8")
+    public void clear(){
+        blocService.userList.clear();
+        blocService.blockchain.clear();
+        blocService.mempool.clear();
+        blocService.sauvegarderEnJson();
+    }
+
+
     @GetMapping("/mempool")
     public List<Transaction> getMempool() {
         return blocService.mempool;
