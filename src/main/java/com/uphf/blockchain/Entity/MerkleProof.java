@@ -9,10 +9,5 @@ public class MerkleProof {
         IndexMapping = new  int[indexSize];
         MerkleTree =  new String [treeSize];
     }
-    public MerkleProof(){
-
-    }
-
-
 
 }

@@ -1,6 +1,8 @@
-import Mining from "./Components/Mining";
-import Explorer from "./Components/Explorer";
-import Accounts from "./Components/Accounts";
+import Minage from "./Components/Minage";
+import Explorateur from "./Components/Explorateur";
+import Comptes from "./Components/Comptes";
+import Donnees from "./Components/Donnees";
+import Soldes from "./Components/Soldes";
 import React, { useState, useEffect } from "react";
 import {
   ChevronLeft,
@@ -33,7 +35,7 @@ const blockVariants = {
 };
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState("Explorer");
+  const [activeTab, setActiveTab] = useState("Explorateur");
   const [blocks, setBlocks] = useState([]);
   const [mempool, setMempool] = useState([]); // ÉTAT POUR LE MEMPOOL
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -48,7 +50,7 @@ const App = () => {
   const [montant, setMontant] = useState("");
   const [notification, setNotification] = useState("");
 
-  const [solde, setSolde] = useState(0);
+  const [difficulte, setDifficulte] = useState(0);
   const adresseTest = "bc1q9x3j7zwyt4d5g8p2m6vhkq9x3j7z";
 
   useEffect(() => {
@@ -59,10 +61,11 @@ const App = () => {
         const javaBlocks = resBlocks.data;
 
         if (javaBlocks && javaBlocks.length > 0) {
-          const formattedBlocks = javaBlocks.map((javaBlock, index) => {
+            const formattedBlocks = javaBlocks.map((javaBlock, index) => {
             const header = javaBlock.blockHeader || javaBlock.BlockHeader;
             const body = javaBlock.blockBody || javaBlock.BlockBody;
             const txList = body?.transactionList || body?.TransactionList || [];
+            setDifficulte(header?.target || header?.Target);
 
             return {
               index: index,
@@ -191,6 +194,15 @@ const App = () => {
     }
   };
 
+  const handleChangeTarget = async (target) => {
+    try {
+      const res = await apiAffiche.changerDifficulte(target);
+    } catch (err) {
+      afficherNotification("Erreur lors de l'action de minage");
+      console.error(err);
+    }
+  };
+
   return (
       <div className="flex h-screen text-black text-slate-800 overflow-hidden font-sans">
 
@@ -206,12 +218,9 @@ const App = () => {
           {/* Navigation Menu */}
           <nav className="flex-1 flex flex-col gap-3">
             {[
-              { title: "Basics", icon: <Search size={20} /> },
-              { title: "Accounts", icon: <Lock size={20} /> },
-              { title: "Mining", icon: <PlusCircle size={20} /> },
-              { title: "Explorer", icon: <Database size={20} /> },
-              { title: "Balances", icon: <Wallet size={20} /> },
-              { title: "Consensus", icon: <Shield size={20} /> },
+              { title: "Explorateur", icon: <Database size={20} /> },
+              { title: "Soldes", icon: <Wallet size={20} /> },
+              { title: "Donnees", icon: <X size={20} /> },
             ].map((item, index) => (
               <button
                 onClick={() => setActiveTab(item.title)}
@@ -248,32 +257,44 @@ const App = () => {
             </div>
             <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Temps moyen de création</span>
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-              </div>
-              <div className="text-[15px] font-bold text-slate-700">All Nodes Synced</div>
-            </div>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <div className="flex items-center justify-between mb-2">
                 <span className="text-[12px] font-black text-slate-400 uppercase tracking-widest">Difficulté Actuelle</span>
                 <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
               </div>
-              <div className="text-[15px] font-bold text-slate-700">All Nodes Synced</div>
+              <div className="text-[15px] font-bold text-slate-700">{difficulte}</div>
             </div>
           </div>
         </aside>
 
         {/* 2. PANNEAU CENTRAL : EXPLORATEUR BLOCKCHAIN (50% de l'écran) */}
-        <main className="w-2/4 flex flex-col items-center justify-center p-8 relative overflow-hidden">
+        <main className="w-2/4 flex flex-col items-center p-8 relative overflow-y-auto custom-scrollbar">
 
-          {activeTab === "Accounts" && <Accounts />}
-          {activeTab === "Mining" && (
-            <Mining 
+          {activeTab === "Comptes" && (
+            <Comptes afficherNotification={afficherNotification} />
+          )}
+          {activeTab === "Minage" && (
+            <Minage 
               isMining={simActive} 
-              onToggle={handleToggleSimulation} 
+              onToggle={handleChangeTarget} 
             />
           )}
-          {activeTab === "Explorer" && <Explorer />}
+          {activeTab === "Explorateur" && <Explorateur />}
+
+          {activeTab === "Donnees" && (
+            <Donnees 
+              title="Donnees brutes de la chaine"
+              data={{
+                blocks: blocks,
+              }}
+              afficherNotification={afficherNotification}
+            />
+          )}
+
+          {activeTab === "Soldes" && (
+            <Soldes 
+              blocks={blocks} 
+              afficherNotification={afficherNotification} 
+            />
+          )}
 
           
         </main>

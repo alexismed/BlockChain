@@ -16,6 +16,7 @@ import {
   Lock,
   LogOut,
   PlusCircle,
+  Trash2, 
   Copy
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -29,11 +30,11 @@ const blockVariants = {
   hiddenRight: { x: 400, scale: 0.5, opacity: 0, zIndex: 0 },
 };
 
-const Explorer = () => {
+const Explorateur = () => {
   const [blocks, setBlocks] = useState([]);
   const [mempool, setMempool] = useState([]); // ÉTAT POUR LE MEMPOOL
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [simActive, setSimActive] = useState(true);
+  const [simActive, setSimActive] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBlock, setSelectedBlock] = useState(null);
 
@@ -55,7 +56,7 @@ const Explorer = () => {
         const javaBlocks = resBlocks.data;
 
         if (javaBlocks && javaBlocks.length > 0) {
-          const formattedBlocks = javaBlocks.map((javaBlock, index) => {
+            const formattedBlocks = javaBlocks.map((javaBlock, index) => {
             const header = javaBlock.blockHeader || javaBlock.BlockHeader;
             const body = javaBlock.blockBody || javaBlock.BlockBody;
             const txList = body?.transactionList || body?.TransactionList || [];
@@ -159,58 +160,84 @@ const Explorer = () => {
     }
   };
 
+  const handleClearBlockchain = async () => { 
+  if (window.confirm("Are you sure you want to delete the ENTIRE blockchain? This action is irreversible.")) {
+    try {
+      await apiAffiche.clearBlockchain();
+      setBlocks([]); // Clear the local state immediately for better UX
+      setCurrentIndex(0);
+      setSimActive(false);
+      afficherNotification("Blockchain cleared successfully");
+    } catch (err) {
+      afficherNotification("Error clearing blockchain");
+      console.error(err);
+    }
+  }
+};
+
   return (
         <div>
           <div className="z-20 text-center mb-6 w-full">
-            <div 
-              role="button"
-              onClick={handleToggleSimulation}
-              className="group relative cursor-pointer transition-all duration-300 active:scale-95"
-            >
-              {/* Dynamic Glow: Changes from Emerald to Amber based on state */}
-              <div className={`absolute -inset-1 rounded-[2rem] blur opacity-25 group-hover:opacity-60 transition duration-500 ${
-                simActive 
-                  ? "bg-gradient-to-r from-orange-400 to-red-500" 
-                  : "bg-gradient-to-r from-teal-400 to-emerald-500"
-              }`}></div>
+            
+            {/* --- BUTTONS SECTION --- */}
+            <div className="z-20 text-center mb-12 w-full flex flex-col items-center gap-6">
               
-              {/* Main Button Body */}
-              <div className={`relative flex items-center justify-center gap-6 px-10 py-5 rounded-[2rem] shadow-2xl border border-white/20 transition-colors duration-500 ${
-                simActive 
-                  ? "bg-gradient-to-r from-orange-500 to-red-600" 
-                  : "bg-gradient-to-r from-teal-500 to-emerald-600"
-              }`}>
+              {/* Container for horizontal alignment */}
+              <div className="flex items-center justify-center gap-4 w-full">
                 
-                {/* Icon Container with state-based animation */}
-                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md shadow-inner">
-                  <Cpu 
-                    className={`text-white ${simActive ? "animate-spin" : "animate-pulse"}`} 
-                    size={32} 
-                  />
-                </div>
-                
-                <div className="flex flex-col items-start min-w-[160px]">
-                  <span className="text-xl font-black text-white tracking-tight uppercase">
-                    {simActive ? "Arreter Simulation" : "Activer Simulation"}
-                  </span>
+                {/* 1. START/STOP SIMULATION BUTTON */}
+                <div 
+                  role="button"
+                  onClick={handleToggleSimulation}
+                  className="group relative cursor-pointer transition-all duration-300 active:scale-95 flex-1 max-w-xs"
+                >
+                  <div className={`absolute -inset-1 rounded-[2rem] blur opacity-25 group-hover:opacity-60 transition duration-500 ${
+                    simActive ? "bg-gradient-to-r from-orange-400 to-red-500" : "bg-gradient-to-r from-teal-400 to-emerald-500"
+                  }`}></div>
+                  
+                  <div className={`relative flex items-center justify-center gap-4 px-6 py-4 rounded-[2rem] shadow-2xl border border-white/20 transition-colors duration-500 ${
+                    simActive ? "bg-gradient-to-r from-orange-500 to-red-600" : "bg-gradient-to-r from-teal-500 to-emerald-600"
+                  }`}>
+                    <div className="bg-white/20 p-2 rounded-xl backdrop-blur-md shadow-inner">
+                      <Cpu className={`text-white ${simActive ? "animate-spin" : "animate-pulse"}`} size={24} />
+                    </div>
+                    <span className="text-sm font-black text-white tracking-tight uppercase">
+                      {simActive ? "Desactiver Simulation" : "Activer Simulation"}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Status Indicator Light */}
-                <div className={`ml-2 px-3 py-1 rounded-full border border-white/20 ${
-                  simActive ? "bg-red-400/40" : "bg-emerald-400/30"
-                }`}>
-                  <div className={`w-2.5 h-2.5 rounded-full ${
-                    simActive ? "bg-white animate-ping" : "bg-white/50"
-                  }`}></div>
+                {/* 2. DELETE BLOCKCHAIN BUTTON */}
+                <div 
+                  role="button"
+                  onClick={handleClearBlockchain}
+                  className="group relative cursor-pointer transition-all duration-300 active:scale-95 flex-1 max-w-xs"
+                >
+                  <div className="absolute -inset-1 rounded-[2rem] bg-gradient-to-r from-rose-400 to-red-600 blur opacity-10 group-hover:opacity-40 transition duration-500"></div>
+                  
+                  <div className="relative flex items-center justify-center gap-4 px-6 py-4 rounded-[2rem] bg-white border border-rose-100 shadow-xl group-hover:border-rose-300 transition-colors">
+                    <div className="bg-rose-500 p-2 rounded-xl text-white shadow-lg shadow-rose-200">
+                      <Trash2 size={24} />
+                    </div>
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-black text-slate-800 tracking-tight uppercase">Supprimer Chaine</span>
+                      <span className="text-[9px] font-bold text-rose-500 uppercase leading-none">Supprimer toute la chaine</span>
+                    </div>
+                  </div>
                 </div>
+
               </div>
-            </div>
-            
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Database className="text-teal-500" size={28} />
-              <h1 className="text-3xl font-black tracking-tighter text-blue uppercase">
-                BlockChain Explorer
-              </h1>
+
+              {/* --- HEADER SECTION --- */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
+                  <Database className="text-teal-500" size={28} />
+                  <h1 className="text-3xl font-black tracking-tighter text-slate-800 uppercase">
+                    BlockChain Explorateur
+                  </h1>
+                </div>
+                <div className="w-24 h-1 bg-gradient-to-r from-teal-500 to-transparent rounded-full"></div>
+              </div>
             </div>
 
             <form onSubmit={handleSearch} className="flex bg-white/90 p-1 rounded-2xl shadow-xl w-72 border border-teal-100 mx-auto mb-4">
@@ -295,7 +322,7 @@ const Explorer = () => {
             )}
           </div>
 
-          <div className="absolute bottom-10 flex gap-4">
+          <div className="flex justify-center gap-6 mt-16 pb-12 w-full">
             <button
                 onClick={moveFirst}
                 disabled={currentIndex === 0 || blocks.length === 0}
@@ -364,11 +391,11 @@ const Explorer = () => {
                     </button>
                   </div>
                 </div>
-                <div className="col-span-2 bg-slate-50 p-4 rounded-2xl">
+                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
                   <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Mineur</label>
                   <div className="flex items-center gap-3">
                     <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
-                      {(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur)}
+                      {(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur).substring(0, 5)}...{(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur).substring(60)}
                     </div>
                     <button 
                       onClick={() => {
@@ -376,10 +403,18 @@ const Explorer = () => {
                         afficherNotification("Hash copied to clipboard!");
                       }}
                       className="p-2 bg-white rounded-lg text-teal-500 hover:bg-teal-500 hover:text-white transition-all shadow-sm border border-teal-100 active:scale-90"
-                      title="Copier Adresse"
+                      title={(selectedBlock.coinbase.Mineur || selectedBlock.coinbase.mineur)}
                     >
                       <Copy size={14} />
                     </button>
+                  </div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
+                  <label className="text-[10px] font-black text-slate-400 uppercase mb-1 block">Recompense</label>
+                  <div className="flex items-center gap-3">
+                    <div className="font-mono text-[10px] text-slate-600 break-all flex-1">
+                      {(selectedBlock.coinbase.Recompense || selectedBlock.coinbase.recompense) ? (selectedBlock.coinbase.Recompense || selectedBlock.coinbase.recompense).toFixed(4) : "0.00"}
+                    </div>
                   </div>
                 </div>
                 <div className="bg-slate-50 p-4 rounded-2xl flex items-center gap-4">
@@ -471,4 +506,4 @@ const Explorer = () => {
 };
 
 
-export default Explorer;
+export default Explorateur;

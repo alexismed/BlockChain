@@ -70,6 +70,17 @@ public class BlocController {
         return blocService.genererBlocTest();
     }
 
+    @PostMapping("/changerDifficulte")
+    public ResponseEntity<String> changeTarget(
+            @RequestParam int target) {
+                
+        System.out.println("Target Before:" + blocService.difficulty);
+        blocService.difficulty = target;
+        System.out.println("Target:" + blocService.difficulty);
+        return ResponseEntity.ok("Difficulté changé");
+      
+    }
+
     @GetMapping("/miner")
     public Bloc minerBloc(){
         Bloc bloc = blocService.genererBlocTest();
@@ -111,7 +122,7 @@ public class BlocController {
         System.out.println("Txs:" + blocService.mempool.size());
     }
 
-    @GetMapping("/8")
+    @GetMapping("/clear")
     public void clear(){
         blocService.isMining = false;
         blocService.userList.clear();

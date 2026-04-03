@@ -15,9 +15,10 @@ export const apiAffiche = {
     getBlockChain: () => api.get("all"),
     getMempool: () => api.get("mempool"), // NOUVELLE ROUTE ICI !
     toggleMining: () => api.get("toggle"),
+    clearBlockchain: () => api.get("clear"),
 
-    login: (user, password) =>
-        api.post(`login?user=${user}&password=${password}`),
+    changerDifficulte: (target) =>
+        api.post(`changerDifficulte?target=${target}`),
 
     creerTransaction: (token, destinataire, montant) =>
         api.post(`transaction?token=${token}&destinataire=${destinataire}&montant=${montant}`)

@@ -10,9 +10,6 @@ public class Body {
         CoinBaseTrans = coinBaseTrans;
         TransactionList = list;
     }
-    public Body(){
-
-    }
 
     public CoinBase getCoinBaseTrans() {
         return CoinBaseTrans;

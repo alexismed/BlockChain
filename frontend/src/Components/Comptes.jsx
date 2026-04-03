@@ -11,7 +11,7 @@ import {
   User
 } from "lucide-react";
 
-const Accounts = ({ afficherNotification }) => {
+const Comptes = ({ afficherNotification }) => {
   const [accounts, setAccounts] = useState([]);
   const [newName, setNewName] = useState("");
 
@@ -188,4 +188,4 @@ const DataField = ({ label, value, icon, onCopy, isSecret = false }) => {
   );
 };
 
-export default Accounts;
+export default Comptes;

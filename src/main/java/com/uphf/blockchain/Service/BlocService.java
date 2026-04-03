@@ -25,6 +25,7 @@ import java.util.Random;
 @Service
 public class BlocService {
 
+    public int difficulty = 2;
     public Boolean isMining = false;
     public List<Bloc> blockchain = new ArrayList<>();
     public List<Transaction> mempool = new ArrayList<>();
@@ -526,7 +527,7 @@ public class BlocService {
             hashPrecedent = blocPrecedent.getHashBlock();
         }
         String merkleRoot = hasherBody(body);
-        int target = blockchain.size() < 1000 ? 2 : 5;
+        int target = blockchain.size() < 300 ? 3 : 5;
         Header header = new Header(
             merkleRoot, 
             LocalDateTime.now(),
