@@ -11,6 +11,8 @@ public class Body {
         TransactionList = list;
     }
 
+    public Body() {}
+
     public CoinBase getCoinBaseTrans() {
         return CoinBaseTrans;
     }

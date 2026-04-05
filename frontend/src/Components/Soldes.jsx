@@ -11,68 +11,81 @@ import {
   TrendingUp,
   Activity
 } from "lucide-react";
+import { apiAffiche } from "../api";
 
-const Soldes = ({ blocks, afficherNotification }) => {
+const Soldes = ({ afficherNotification }) => {
   const [addressSearch, setAddressSearch] = useState("");
   const [results, setResults] = useState([]);
   const [hasSearched, setHasSearched] = useState(false);
 
   // --- CALCULATION LOGIC ---
   const calculateBalance = () => {
+    let acc = Number(0);
+    results.slice().reverse().forEach(tx => {
+      const amount = Number(tx.amount) || 0;
+      acc = tx.isCoinbase ? acc + amount : tx.isOutgoing ? acc - amount : acc + amount;
+      tx.partialSum = acc;
+    });
+    
     return results.reduce((acc, tx) => {
       const amount = Number(tx.amount) || 0;
       if (tx.isCoinbase) {
-        return acc + amount; // Mining rewards are always incoming
+        return acc + amount; 
       }
-      const sender = tx.expediteur || tx.Expediteur;
-      const isOutgoing = sender?.toLowerCase() === addressSearch.toLowerCase();
-      return isOutgoing ? acc - amount : acc + amount;
+      return tx.isOutgoing ? acc - amount : acc + amount;
     }, 0);
   };
 
   const finalBalance = calculateBalance();
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
     if (!addressSearch.trim()) return;
+    
+    const [resTransList, resCBList] = await Promise.all([
+        apiAffiche.getTransactions(addressSearch),
+        apiAffiche.getCoinBaseTransactions(addressSearch)
+    ]);
+    const currentTransactions = resTransList.data || [];
+    const currentCoinbase = resCBList.data || [];
 
-    const allMatches = [];
-    blocks.forEach(block => {
-      // 1. Coinbase
-      const cb = block.coinbase || block.Coinbase;
-      if (cb) {
-        const mineur = cb.Mineur || cb.mineur;
-        if (mineur?.toLowerCase() === addressSearch.toLowerCase()) {
-          allMatches.push({
-            isCoinbase: true,
-            amount: cb.Recompense || cb.recompense || 0,
-            destinataire: mineur,
-            expediteur: "SYSTEM_REWARD",
-            blockIndex: block.index,
-            timestamp: block.timestamp,
-          });
-        }
-      }
-      // 2. Transactions
-      const txs = block.transactions || [];
-      txs.forEach(tx => {
+    
+
+    const transactionMatches = currentTransactions.map(tx => {
         const sender = tx.expediteur || tx.Expediteur;
-        const receiver = tx.destinataire || tx.Destinataire;
-        if (sender?.toLowerCase() === addressSearch.toLowerCase() || 
-            receiver?.toLowerCase() === addressSearch.toLowerCase()) {
-          allMatches.push({
+        const isOutgoing = sender?.toLowerCase() === addressSearch.toLowerCase();
+        return {
             ...tx,
-            amount: tx.quantite || tx.Quantite || 0,
-            blockIndex: block.index,
-            timestamp: block.timestamp,
-            isCoinbase: false
-          });
-        }
-      });
+            amount: isOutgoing ? (tx.Quantite + tx.Frais) : tx.Quantite,
+            blockIndex: Number(tx.BlockIndex),
+            isCoinbase: false,
+            isOutgoing: isOutgoing,
+            partialSum: Number(0)
+        };
     });
+    
+    
 
-    setResults(allMatches.sort((a, b) => b.blockIndex - a.blockIndex));
+    const coinbasePromises = currentCoinbase.map(async (blockIndex) => {
+      const resFrais = await apiAffiche.getFraisBlock(blockIndex);
+      return {
+        amount: Number(resFrais.data || 0) + 50, // Reward + Fees
+        blockIndex: Number(blockIndex),
+        isCoinbase: true,
+        isOutgoing: false,
+        partialSum: Number(0)
+      };
+    });
+    const coinbaseMatches = await Promise.all(coinbasePromises);
+
+    const allMatches = [...transactionMatches, ...coinbaseMatches];
+    
+    const sorted = allMatches.sort((a, b) => {
+      return Number(b.blockIndex) - Number(a.blockIndex); // Newest first
+    });
+    setResults(sorted);
     setHasSearched(true);
+
     if (allMatches.length === 0) afficherNotification("No history found.");
   };
 
@@ -161,17 +174,26 @@ const Soldes = ({ blocks, afficherNotification }) => {
                           </div>
                           <div>
                             <span className="text-[10px] font-black uppercase text-slate-400 block tracking-wider leading-none mb-1">
-                                {tx.isCoinbase ? "Mining Reward" : isOutgoing ? "Payment Sent" : "Payment Received"}
+                                {tx.isCoinbase ? "Récompense Minage" : isOutgoing ? "Paiement Envoyé" : "Paiement Reçu"}
                             </span>
                             <span className="text-[9px] font-bold text-slate-600 uppercase flex items-center gap-1">
                                 <Calendar size={10} /> Block #{tx.blockIndex}
                             </span>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <span className={`text-lg font-black ${tx.isCoinbase ? 'text-indigo-200' : isOutgoing ? 'text-red-400' : 'text-emerald-400'}`}>
-                            {isOutgoing ? "-" : "+"}{Number(tx.amount).toFixed(4)} BTC
-                          </span>
+                        <div className="text-right flex flex-col items-end">
+                            {/* The Transaction Amount (Change) */}
+                            <span className={`text-lg font-black leading-none ${tx.isCoinbase ? 'text-indigo-200' : isOutgoing ? 'text-red-400' : 'text-emerald-400'}`}>
+                                {isOutgoing ? "-" : "+"}{Number(tx.amount).toFixed(4)} BTC
+                            </span>
+                            
+                            {/* The New Running Balance (Total at that time) */}
+                            <div className="mt-1 flex items-center gap-1.5 opacity-60">
+                                <span className="text-[8px] font-black uppercase text-slate-500 tracking-tighter">Solde:</span>
+                                <span className="text-[11px] font-mono font-bold text-slate-400">
+                                {tx.partialSum.toFixed(4)} <span className="text-[9px]">BTC</span>
+                                </span>
+                            </div>
                         </div>
                       </div>
                     </motion.div>

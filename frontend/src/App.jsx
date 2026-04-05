@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiAffiche } from "./api";
+import Principes from "./Components/Principes";
 
 const blockVariants = {
   center: { x: 0, scale: 1, opacity: 1, zIndex: 10, filter: "blur(0px)" },
@@ -218,6 +219,7 @@ const App = () => {
           {/* Navigation Menu */}
           <nav className="flex-1 flex flex-col gap-3">
             {[
+              { title: "Principes", icon: <Search size={20} /> },
               { title: "Explorateur", icon: <Database size={20} /> },
               { title: "Soldes", icon: <Wallet size={20} /> },
               { title: "Donnees", icon: <X size={20} /> },
@@ -268,6 +270,9 @@ const App = () => {
         {/* 2. PANNEAU CENTRAL : EXPLORATEUR BLOCKCHAIN (50% de l'écran) */}
         <main className="w-2/4 flex flex-col items-center p-8 relative overflow-y-auto custom-scrollbar">
 
+          {activeTab === "Principes" && (
+            <Principes afficherNotification={afficherNotification} />
+          )}
           {activeTab === "Comptes" && (
             <Comptes afficherNotification={afficherNotification} />
           )}
@@ -291,7 +296,6 @@ const App = () => {
 
           {activeTab === "Soldes" && (
             <Soldes 
-              blocks={blocks} 
               afficherNotification={afficherNotification} 
             />
           )}

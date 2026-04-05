@@ -33,6 +33,7 @@ public class BlocService {
     private ObjectMapper objectMapper;
     private final String FILE_NAME_BLOCKCHAIN = "blockchain.json";
     private final String FILE_NAME_MEMPOOL = "mempool.json";
+    private final String FILE_NAME_USERLIST = "userlist.json";
 
     public BlocService() {
         this.objectMapper = new ObjectMapper();
@@ -64,11 +65,22 @@ public class BlocService {
             blockchain.add(genererBlocTest());
             System.out.println(" Aucun fichier JSON trouvé, démarrage d'une blockchain vide.");
         }
+        fichier = new File(FILE_NAME_USERLIST);
+        if (fichier.exists()) {
+            try {
+                userList = objectMapper.readValue(fichier, new TypeReference<List<String>>() {});
+            } catch (IOException e) {
+                System.out.println(" Erreur de lecture du JSON : " + e.getMessage());
+            }
+        } else {
+            System.out.println(" Aucun fichier JSON trouvé, démarrage d'une liste vide.");
+        }
     }
     public void sauvegarderEnJson() {
         try {
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(FILE_NAME_MEMPOOL), mempool);
             objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(FILE_NAME_BLOCKCHAIN), blockchain);
+            objectMapper.writerWithDefaultPrettyPrinter().writeValue(new File(FILE_NAME_USERLIST), userList);
             System.out.println(" Blockchain sauvegardée dans " + FILE_NAME_BLOCKCHAIN);
         } catch (IOException e) {
             System.out.println(" Erreur d'écriture du JSON : " + e.getMessage());
@@ -103,7 +115,7 @@ public class BlocService {
             ransString[i] = charPool.charAt(randomNumbers.nextInt(charPool.length()));
         }
         String result = new String(ransString);
-        return hasher(result);
+        return hasher(hasher(result));
     }
 
     public Header genererHeaderTest()
@@ -127,6 +139,7 @@ public class BlocService {
             randNumber.nextDouble()*100,
             randNumber.nextDouble()*10
         );
+        hasherTransaction(transaction);
         return transaction;
     } 
 
@@ -147,6 +160,7 @@ public class BlocService {
         remplirMempool();
         for(int i = 0; i< 4; i++)
         {
+            if(i>=mempool.size()) break;
             transList.add(mempool.get(i));
         }
         Collections.sort(transList, new SortByFee());
@@ -158,7 +172,7 @@ public class BlocService {
         System.out.println(" HEADER:");
         System.out.println("  Hash Precedent:" + header.getHashPre());
         System.out.println("  Merkle Root:" + header.getMerkleRoot());
-        System.out.println("  TimeStamp:" + header.getTimeStamp().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        System.out.println("  TimeStamp:" + header.getTimeStamp().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         System.out.println("  Target (Complexite):" + header.getTarget());
         System.out.println("  Nonce:" + String.valueOf(header.getNonce()));
     }
@@ -171,6 +185,7 @@ public class BlocService {
     }
 
     public void afficherTransaction(Transaction transaction){
+        System.out.println("    TxID:" + transaction.getTxID());
         System.out.println("    Expediteur:" + transaction.getExpediteur());
         System.out.println("    Destinataire:" + transaction.getDestinataire());
         System.out.println("    Quantite:" + String.format("%.9f", transaction.getQuantite()));
@@ -215,23 +230,27 @@ public class BlocService {
     public String hasherTransaction(Transaction transaction) {
         String result = transaction.getExpediteur() + transaction.getDestinataire();
         result += String.format("%.9f", transaction.getQuantite() + transaction.getFrais());
-        return hasher(result);
+        result = hasher(hasher(result));
+        result += LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        result = hasher(hasher(result));
+        transaction.setTxID(result);
+        return result;
     }
 
     public String trouverMerkle(List<Transaction> transList, int start, int end) {
         if (start ==  end ){
-            return hasherTransaction(transList.get(start));
+            return transList.get(start).getTxID();
         }
         String result = trouverMerkle(transList, start , (start + end)/2);
         result += trouverMerkle(transList, (start + end)/2+1,end);
-        return hasher(result);
+        return hasher(hasher(result));
     }
 
     public String hasherCoinBase(CoinBase coinBase) {
        String result = coinBase.getMineur();
        result += String.format("%.9f", coinBase.getRecompense());
        result += String.valueOf(coinBase.getExtraNonce());
-       return hasher(result);
+       return hasher(hasher(result));
     }
 
     public String hasherBody(Body body)
@@ -240,7 +259,7 @@ public class BlocService {
         List<Transaction> transList = body.getTransactionList();
         if(transList.size()<1) return result;
         result += trouverMerkle(transList, 0, transList.size()-1);
-        return hasher(result);
+        return hasher(hasher(result));
     }
 
     public void  test () {
@@ -267,9 +286,9 @@ public class BlocService {
 
     public String hasherHeader (Header header){
         String result = header.getHashPre() + String.valueOf(header.getNonce());
-        result=hasher(result);
+        result=hasher(hasher(result));
         result += header.getMerkleRoot();
-        return hasher(result);
+        return hasher(hasher(result));
     }
 
     public boolean validateTransactions(Body body,String merkleRoot){
@@ -301,14 +320,14 @@ public class BlocService {
                 }else {
                     hash += merkleProof.MerkleTree[actuelle+1];
                 }
-                hash=hasher(hash);
+                hash=hasher(hasher(hash));
                 actuelle=(actuelle-1)/2;
                 if (!merkleProof.MerkleTree[actuelle].equals(hash)){
                     return false;
                 }
             }
             hash=hashCoinBase+merkleProof.MerkleTree[actuelle];
-            if (!merkleRoot.equals(hasher(hash))){
+            if (!merkleRoot.equals(hasher(hasher(hash)))){
                 return false;
             }
 
@@ -410,13 +429,13 @@ public class BlocService {
         if(start==end)
         {
             merkleProof.IndexMapping[start]=index;
-            merkleProof.MerkleTree[index] = hasherTransaction(transList.get(start));
+            merkleProof.MerkleTree[index] = transList.get(start).getTxID();
             return merkleProof;
         }
         merkleProof = fillMerkleProof(start, (start+end)/2, index*2+1, merkleProof,transList);
         merkleProof = fillMerkleProof((start+end)/2+1, end, index*2+2, merkleProof,transList);
         merkleProof.MerkleTree[index] = merkleProof.MerkleTree[index*2+1] + merkleProof.MerkleTree[index*2+2];
-        merkleProof.MerkleTree[index]=hasher(merkleProof.MerkleTree[index]);
+        merkleProof.MerkleTree[index]=hasher(hasher(merkleProof.MerkleTree[index]));
         return merkleProof;
     }
 
@@ -592,7 +611,60 @@ public class BlocService {
             quantite,
             frais
         );
+        hasherTransaction(transaction);
         mempool.add(transaction);
+    }
+
+    public int obtenirIndex(String adresse)
+    {
+        for(int i = 0; i<userList.size(); i++)
+        {
+            if(adresse.equals( userList.get(i)))
+                return i;
+        }
+        return -1;
+    }
+
+    public List <Transaction> obtenirTransactions(int index)
+    {
+        String adresse = userList.get(index);
+        System.out.println("NEW ADRESSE:" + adresse);
+        System.out.println("blocks size:" + blockchain.size());
+        List<Transaction> transactions = new ArrayList<>(); 
+        for(int i = 0; i<blockchain.size(); i++)
+        {
+            Body body = blockchain.get(i).getBlockBody();
+            List<Transaction> transList = body.getTransactionList();
+            for(Transaction transaction : transList)
+            {
+                if(
+                    adresse.equals(transaction.getExpediteur()) ||
+                    adresse.equals(transaction.getDestinataire())
+                ){
+                    transactions.add(transaction);
+                    transactions.getLast().setBlockIndex(i);
+                }
+            } 
+        }
+        
+        System.out.println("size:" + transactions.size());
+        return transactions;
+    }
+
+    public List<Integer> obtenirCoinbaseBlocks(int index)
+    {
+        String adresse = userList.get(index);
+        List<Integer> coinBlocks = new ArrayList<>();
+        for(int i = 0; i<blockchain.size(); i++)
+        {
+            Body body = blockchain.get(i).getBlockBody();
+            CoinBase coinBase = body.getCoinBaseTrans();
+            if(adresse.equals(coinBase.getMineur()))
+            {
+                coinBlocks.add(i);
+            }
+        }
+        return coinBlocks;
     }
 
 
@@ -607,7 +679,7 @@ public class BlocService {
         {
             Body body = block.getBlockBody();
             CoinBase coinBase = body.getCoinBaseTrans();
-            if(coinBase.getMineur() == adresse)
+            if(adresse.equals(coinBase.getMineur()))
             {
                 coinbaseTrans.add(coinBase);
             }
@@ -615,8 +687,8 @@ public class BlocService {
             for(Transaction transaction : transList)
             {
                 if(
-                    transaction.getExpediteur() == adresse ||
-                    transaction.getDestinataire() == adresse
+                    adresse.equals(transaction.getExpediteur()) ||
+                    adresse.equals(transaction.getDestinataire())
                 ){
                     transactions.add(transaction);
                 }
@@ -625,34 +697,41 @@ public class BlocService {
 
         for (CoinBase transaction : coinbaseTrans)
         {
-            if(transaction.getMineur() == adresse)
+            if(adresse.equals(transaction.getMineur()))
             {
                 solde += transaction.getRecompense();
             }
         }
         for (Transaction transaction : transactions)
         {
-            if(transaction.getExpediteur() == adresse)
+            if(adresse.equals(transaction.getExpediteur()))
             {
                 solde -= (transaction.getQuantite() + transaction.getFrais());
             }
-            if(transaction.getDestinataire() == adresse)
+            if(adresse.equals(transaction.getDestinataire()))
             {
                 solde += transaction.getQuantite();
             }
         }
         for (Transaction transaction : mempool)
         {
-            if(transaction.getExpediteur() == adresse)
+            if(adresse.equals(transaction.getExpediteur()))
             {
                 solde -= (transaction.getQuantite() + transaction.getFrais());
             }
-            if(transaction.getDestinataire() == adresse)
-            {
-                solde += transaction.getQuantite();
-            }
         }
         return solde;
+    }
+
+    public double obtenirFraisTotaux(Bloc bloc)
+    {
+        double somme = 0.0;
+        Body body = bloc.getBlockBody();
+        List<Transaction> transactions = body.getTransactionList();
+        for (Transaction transaction : transactions) {
+            somme+=transaction.getFrais();
+        }
+        return somme;
     }
 
 }

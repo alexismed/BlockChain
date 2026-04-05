@@ -11,6 +11,8 @@ public class Transaction {
     Double Quantite;
     Double Frais;
     String SignatureTx;
+    String TxID;
+    int BlockIndex;
 
     public Transaction() {}
 
@@ -19,6 +21,8 @@ public class Transaction {
         this.Destinataire = destinataire;
         this.Quantite = quantite;
         this.Frais = frais;
+        this.TxID = "-";
+        this.BlockIndex = -1;
     }
 
     public void signerTransaction(PrivateKey privateKey) {
@@ -78,6 +82,24 @@ public class Transaction {
 
     public void setExpediteur(String expediteur) {
         Expediteur = expediteur;
+    }
+
+    public String getTxID() {
+        return TxID;
+    }
+
+    public void setTxID(String hash) {
+        TxID = hash;
+    }
+
+    public int getBlockIndex()
+    {
+        return BlockIndex;
+    }
+
+    public void setBlockIndex(int index)
+    {
+        BlockIndex = index;
     }
 
     public String getSignatureTx() {

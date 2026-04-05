@@ -17,6 +17,8 @@ public  class Header {
         Nonce = nonce;
     }
 
+    public Header() {}
+
     public String getMerkleRoot() {
         return MerkleRoot;
     }

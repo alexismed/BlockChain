@@ -11,6 +11,8 @@ public class Bloc {
         HashBlock = "00000f5df79a42d6e45525898813a818ce604c4692960d6f4c6b29471039ea33";
     }
 
+    public Bloc() {}
+
     public Body getBlockBody() {
         return BlockBody;
     }

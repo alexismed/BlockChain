@@ -55,6 +55,7 @@ public class BlocController {
 
     @GetMapping("/all")
     public List<Bloc> getAllBlocs() {
+        blocService.chargerDepuisJson();
         return blocService.blockchain;
     }
 
@@ -78,7 +79,6 @@ public class BlocController {
         blocService.difficulty = target;
         System.out.println("Target:" + blocService.difficulty);
         return ResponseEntity.ok("Difficulté changé");
-      
     }
 
     @GetMapping("/miner")
@@ -109,6 +109,9 @@ public class BlocController {
     @GetMapping("/5")
     public void afficher5(){
         blocService.remplirMempool();
+        blocService.mempool.add(blocService.genererTransactionTest());
+        blocService.mempool.add(blocService.genererTransactionTest());
+        System.out.println("------ ---- MEMPOOL SIZE:" + blocService.mempool.size());
         Bloc test = blocService.genererBlocTest();
         blocService.afficherBlock(test);
     }
@@ -140,5 +143,44 @@ public class BlocController {
     @GetMapping("/validate")
     public void testValider(){
         blocService.testValidation();
+    }
+
+    @GetMapping("/hasher")
+    public String getHash(@RequestParam("str") String str){
+        return blocService.hasher(str);
+    }
+
+    @GetMapping("/getTransactions")
+    public List<Transaction> getTransactionsUser(@RequestParam("adresse") String adresse){
+        blocService.chargerDepuisJson();
+        System.out.println("Adresse:" + adresse);
+        int index = blocService.obtenirIndex(adresse);
+        System.out.println("index:" + index);
+        if(index<0)
+        {
+            return new ArrayList<>();
+        }
+        System.out.println("HI:");
+        return blocService.obtenirTransactions(index);
+    }
+
+    @GetMapping("/getCoinBaseTransactions")
+    public List<Integer> getCBTransactionsUser(@RequestParam("adresse") String adresse){
+        blocService.chargerDepuisJson();
+        int index = blocService.obtenirIndex(adresse);
+        System.out.println("index:" + index);
+        if(index<0)
+        {
+            return new ArrayList<>();
+        }
+        System.out.println("HI2:");
+        return blocService.obtenirCoinbaseBlocks(index);
+    }
+
+    @GetMapping("/getFrais")
+    public double getFraisBlock(@RequestParam("index") int index){
+        blocService.chargerDepuisJson();
+        Bloc bloc = blocService.blockchain.get(index); 
+        return blocService.obtenirFraisTotaux(bloc);
     }
 }

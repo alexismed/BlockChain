@@ -11,6 +11,8 @@ public class CoinBase{
         ExtraNonce = extraNonce;
     }
 
+    public CoinBase() {}
+
     public String getMineur() {
         return Mineur;
     }
