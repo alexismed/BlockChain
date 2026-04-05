@@ -21,7 +21,10 @@ import {
   Lock,
   LogOut,
   PlusCircle,
-  Copy
+  Copy,
+  Trash2,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiAffiche } from "./api";
@@ -43,6 +46,7 @@ const App = () => {
   const [simActive, setSimActive] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBlock, setSelectedBlock] = useState(null);
+  const [selectedTxs, setSelectedTxs] = useState([]);
 
   const [token, setToken] = useState(null);
   const [username, setUsername] = useState("admin");
@@ -187,7 +191,7 @@ const App = () => {
 
   const handleToggleSimulation = async () => {
     try {
-      const res = await apiAffiche.toggleMining();
+      const res = await apiAffiche.toggleSimulation();
       setSimActive(res.data);
     } catch (err) {
       afficherNotification("Erreur lors de l'action de minage");
@@ -202,6 +206,31 @@ const App = () => {
       afficherNotification("Erreur lors de l'action de minage");
       console.error(err);
     }
+  };
+
+  const handleDeleteMempool = async (tx) => {
+    if (window.confirm("Supprimer la transaction ?")){
+      const isSelected = selectedTxs.some(item => item.TxID === tx.TxID);
+      if(isSelected){
+        toggleSelection(tx);
+      }
+      console.log("Deleting transaction:", tx);
+      const res = await apiAffiche.deleteTransaction(tx.TxID);
+        afficherNotification(res.data);
+        const resMempool = await apiAffiche.getMempool();
+        setMempool(resMempool.data);
+    }
+  };
+
+  const toggleSelection = (tx) => {
+    setSelectedTxs(prev => {
+      const isSelected = prev.some(item => item.TxID === tx.TxID);
+      if (isSelected) {
+        return prev.filter(item => item.TxID !== tx.TxID);
+      } else {
+        return [...prev, tx];
+      }
+    });
   };
 
   return (
@@ -220,6 +249,7 @@ const App = () => {
           <nav className="flex-1 flex flex-col gap-3">
             {[
               { title: "Principes", icon: <Search size={20} /> },
+              { title: "Minage", icon: <PlusCircle size={20} /> },
               { title: "Explorateur", icon: <Database size={20} /> },
               { title: "Soldes", icon: <Wallet size={20} /> },
               { title: "Donnees", icon: <X size={20} /> },
@@ -278,8 +308,8 @@ const App = () => {
           )}
           {activeTab === "Minage" && (
             <Minage 
-              isMining={simActive} 
-              onToggle={handleChangeTarget} 
+              selectedTxs={selectedTxs} 
+              onToggleSelection={toggleSelection}
             />
           )}
           {activeTab === "Explorateur" && <Explorateur />}
@@ -325,6 +355,7 @@ const App = () => {
                   <div className="text-xs text-slate-800 italic text-center mt-10">Aucune transaction en attente...</div>
               ) : (
                   mempool.map((tx, i) => {
+                    const isSelected = selectedTxs.some(item => item.TxID === tx.TxID);
                     const sender = tx.expediteur || tx.Expediteur;
                     const receiver = tx.destinataire || tx.Destinataire;
                     const amount = tx.quantite || tx.Quantite;
@@ -357,6 +388,27 @@ const App = () => {
                               <span className="text-[9px] font-mono text-slate-700 truncate">{receiver}</span>
                             </div>
                           </div>
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+                <div className="flex gap-2">
+                    {/* Checkbox Button */}
+                    <button 
+                        onClick={() => toggleSelection(tx)}
+                        className={`p-1.5 rounded-lg transition-colors ${
+                            isSelected ? "bg-teal-100 text-teal-600" : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                        }`}
+                    >
+                      {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
+                    </button>
+
+                    {/* Delete Button */}
+                    <button 
+                        onClick={() => handleDeleteMempool(tx)}
+                        className="p-1.5 rounded-lg bg-red-50 text-red-400 hover:bg-red-100 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                </div>
+            </div>
                         </motion.div>
                     );
                   })

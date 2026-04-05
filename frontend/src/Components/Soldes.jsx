@@ -27,13 +27,7 @@ const Soldes = ({ afficherNotification }) => {
       tx.partialSum = acc;
     });
     
-    return results.reduce((acc, tx) => {
-      const amount = Number(tx.amount) || 0;
-      if (tx.isCoinbase) {
-        return acc + amount; 
-      }
-      return tx.isOutgoing ? acc - amount : acc + amount;
-    }, 0);
+    return acc;
   };
 
   const finalBalance = calculateBalance();

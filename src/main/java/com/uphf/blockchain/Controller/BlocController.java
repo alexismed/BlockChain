@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("api/bloc")
@@ -59,10 +60,10 @@ public class BlocController {
         return blocService.blockchain;
     }
 
-    @GetMapping("/toggle")
-    public Boolean toggleMining() {
-        blocService.isMining = !blocService.isMining;
-        return blocService.isMining;
+    @GetMapping("/toggleSimulation")
+    public Boolean toggleSimulation() {
+        blocService.simActive = !blocService.simActive;
+        return blocService.simActive;
     }
 
     @GetMapping("/generer")
@@ -75,9 +76,9 @@ public class BlocController {
     public ResponseEntity<String> changeTarget(
             @RequestParam int target) {
                 
-        System.out.println("Target Before:" + blocService.difficulty);
-        blocService.difficulty = target;
-        System.out.println("Target:" + blocService.difficulty);
+        System.out.println("Target Before:" + blocService.pendingTarget);
+        blocService.pendingTarget = target;
+        System.out.println("Target:" + blocService.pendingTarget);
         return ResponseEntity.ok("Difficulté changé");
     }
 
@@ -153,14 +154,11 @@ public class BlocController {
     @GetMapping("/getTransactions")
     public List<Transaction> getTransactionsUser(@RequestParam("adresse") String adresse){
         blocService.chargerDepuisJson();
-        System.out.println("Adresse:" + adresse);
         int index = blocService.obtenirIndex(adresse);
-        System.out.println("index:" + index);
         if(index<0)
         {
             return new ArrayList<>();
         }
-        System.out.println("HI:");
         return blocService.obtenirTransactions(index);
     }
 
@@ -168,12 +166,10 @@ public class BlocController {
     public List<Integer> getCBTransactionsUser(@RequestParam("adresse") String adresse){
         blocService.chargerDepuisJson();
         int index = blocService.obtenirIndex(adresse);
-        System.out.println("index:" + index);
         if(index<0)
         {
             return new ArrayList<>();
         }
-        System.out.println("HI2:");
         return blocService.obtenirCoinbaseBlocks(index);
     }
 
@@ -182,5 +178,50 @@ public class BlocController {
         blocService.chargerDepuisJson();
         Bloc bloc = blocService.blockchain.get(index); 
         return blocService.obtenirFraisTotaux(bloc);
+    }
+
+    @PostMapping("/deleteTransaction")
+    public ResponseEntity<String> deleteTransaction(@RequestParam String txID) {
+        blocService.chargerDepuisJson();
+        for(int i = 0 ; i<blocService.mempool.size();i++)
+        {
+            if(txID.equals(blocService.mempool.get(i).getTxID()))
+            {
+                blocService.mempool.remove(i);
+                blocService.remplirMempool();
+                blocService.sauvegarderEnJson();
+                return ResponseEntity.ok("Transaction supprimée");
+            }
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Transaction non trouvée");
+    }
+
+    @PostMapping("/toggleMining")
+    public ResponseEntity<String> toggleMining(@RequestBody MineRequest request)
+    {
+        blocService.chargerDepuisJson();
+        System.out.println("OUI! NEW OUI!!!!");
+        List<String> ids = request.getTxIDs();
+        int target = request.getTarget();
+        System.out.println("size:" + ids.size());
+        System.out.println("target:" + target);
+        if(ids.size()>0)
+        {
+            System.out.println("first:" + ids.get(0));
+            System.out.println("first mempool:" + blocService.mempool.get(0).getTxID());
+        }
+        if(blocService.mineLock)
+        {
+            blocService.mineLock = false;
+            blocService.isMining = false;
+            return ResponseEntity.ok("Mining off");
+        }
+        blocService.pendingTransactions = ids; 
+        blocService.pendingTarget = target;
+        blocService.pendingMineur = -1;
+        blocService.mineLock = true;
+        blocService.isMining = true;
+        System.out.println("FINI!");
+        return ResponseEntity.ok("Mining on");
     }
 }

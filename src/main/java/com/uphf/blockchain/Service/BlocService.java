@@ -25,11 +25,16 @@ import java.util.Random;
 @Service
 public class BlocService {
 
-    public int difficulty = 2;
     public Boolean isMining = false;
+    public Boolean simActive = false;
+    public Boolean mineLock = false;
+    public int pendingMineur = -1;
+    public int pendingTarget = -1;
     public List<Bloc> blockchain = new ArrayList<>();
     public List<Transaction> mempool = new ArrayList<>();
     public List<String> userList = new ArrayList<>();
+    public List<String> pendingTransactions = new ArrayList<>();
+    public Bloc pendingBloc = new Bloc();
     private ObjectMapper objectMapper;
     private final String FILE_NAME_BLOCKCHAIN = "blockchain.json";
     private final String FILE_NAME_MEMPOOL = "mempool.json";
@@ -89,6 +94,7 @@ public class BlocService {
 
     public void remplirMempool()
     {
+        System.out.println("REMPLIR MEMPOOL");
         for(int i = 0; i < (2 * userList.size()) ; i++ )
         {
             if(mempool.size() >= 200) break;
@@ -338,6 +344,11 @@ public class BlocService {
     public boolean proofOfWork(Bloc bloc){
         Header header = bloc.getBlockHeader();
         for(int i = 0 ; i<Integer.MAX_VALUE ; i++){
+            if(i%1000==0)System.out.println("POF:" + i);
+            if(!simActive && !isMining)
+            {
+                return false;
+            }
             header.setNonce(i);
             String hash = hasherHeader(header);
             if(validerHash(hash, header.getTarget())){
@@ -355,7 +366,7 @@ public class BlocService {
         String merkleroot = hasherBody(body);
         header.setMerkleRoot(merkleroot);
         bloc.setBlockHeader(header);
-
+        pendingBloc = bloc;
         return proofOfWork(bloc);
 
     }
@@ -381,7 +392,7 @@ public class BlocService {
         {
             blockchain.add(genererBlocTest());
         }
-        if(!isMining) 
+        if(!simActive) 
         {
             return;
         }
@@ -521,9 +532,15 @@ public class BlocService {
     @Scheduled(fixedRate = 10)
     public void simulateBlockChain()
     {
-        if(!isMining)return;
-        // Create Body 
-        int indexMineur = choisirUtilisateur();
+        if(!simActive && !mineLock)return;
+        if(mineLock)mineLock=false;
+        // Create Body
+        System.out.println("SIM!");
+        int indexMineur = choisirUtilisateur(); 
+        
+        if(isMining && pendingMineur>=0)
+            indexMineur = pendingMineur; 
+
         List<Transaction> transList = choisirTransactions();
         int halving = blockchain.size() / 100;
         double recompense = 50.0;
@@ -547,6 +564,10 @@ public class BlocService {
         }
         String merkleRoot = hasherBody(body);
         int target = blockchain.size() < 300 ? 3 : 5;
+        if(isMining)
+            target=pendingTarget;
+        
+
         Header header = new Header(
             merkleRoot, 
             LocalDateTime.now(),
@@ -554,6 +575,7 @@ public class BlocService {
                 target,
             0);
         Bloc newBlock = new Bloc(header,body);
+        pendingBloc = newBlock;
 
         // Find Nonce 
         if(proofOfWork(newBlock))
@@ -562,6 +584,8 @@ public class BlocService {
         }
         remplirMempool();
         sauvegarderEnJson();
+        isMining = false;
+        pendingBloc = new Bloc();
     }
 
     int choisirUtilisateur()
@@ -579,6 +603,33 @@ public class BlocService {
     List<Transaction> choisirTransactions()
     {
         List<Transaction> transactions = new ArrayList<>();
+        List<Integer> transIndexes = new ArrayList<>();
+        if(isMining)
+        {
+            for (String txID : pendingTransactions) {
+                System.out.println(txID);
+                for(int i = 0 ; i < mempool.size();i++)
+                {
+                    if(txID.equals(mempool.get(i).getTxID()))
+                    {
+                        System.out.println("YES!");
+                        transactions.add(mempool.get(i));
+                        System.out.println("size1:" + transactions.size());
+                        transIndexes.add(i);
+                        System.out.println("size2:" + transactions.size());
+                        System.out.println("INDEX:" + i);
+                    }    
+                }                
+            }
+            for (int i = 0; i<transIndexes.size();i++) {
+                System.out.println("INDEX TO DELETE:" + (transIndexes.get(i)-i));
+                mempool.remove(transIndexes.get(i)-i);
+            }
+
+            System.out.println("size3:" + transactions.size());
+            return transactions;
+        }
+
         while(mempool.size()>0 && transactions.size()<=100)
         {
             transactions.add(mempool.get(0));
@@ -605,6 +656,8 @@ public class BlocService {
             quantite = quantite / 3.0;
             frais = frais / 3.0;
         }
+        double minAmount = 0.0001;
+        if(quantite<minAmount || frais < minAmount) return;
         Transaction transaction = new Transaction(
             userList.get(expediteur), 
             userList.get(destinataire), 

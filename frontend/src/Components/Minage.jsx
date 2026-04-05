@@ -1,11 +1,26 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Cpu, Activity, Zap, ShieldAlert } from "lucide-react";
+import { Cpu, CheckSquare, Square, Database } from "lucide-react";
+import { apiAffiche } from "../api";
 
 // We "destructure" the props here: isMining and toggleFunction 
 // come from App.jsx
-const Minage = ({ isMining, onToggle }) => {
-  const [difficulty, setDifficulty] = React.useState(1);
+const Minage = ({ selectedTxs, onToggleSelection }) => {
+  const [difficulty, setDifficulty] = React.useState(3);
+  const [isMining, setisMining] = React.useState(false);
+
+  const handleToggleMining = async () => {
+    const txIDS = selectedTxs.map(tx => tx.TxID);
+    console.log(txIDS);  
+    try {
+        const res = await apiAffiche.toggleMining(txIDS, difficulty);
+        setisMining(!isMining);
+      } catch (err) {
+        afficherNotification("Erreur lors de l'action de minage");
+        console.error(err);
+      }
+    };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -15,10 +30,10 @@ const Minage = ({ isMining, onToggle }) => {
       {/* 1. Header Section */}
       <div className="text-center">
         <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tighter mb-2">
-          Network Consensus
+          Minage de Blocks
         </h2>
         <p className="text-slate-500 text-sm font-medium">
-          Manage local node mining and block validation parameters.
+          Selectionner des transactions pour créer un block
         </p>
       </div>
 
@@ -45,7 +60,7 @@ const Minage = ({ isMining, onToggle }) => {
           <div className="w-full space-y-4">
             <div className="flex justify-between items-end">
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                Target Difficulty
+                Difficulté du block
               </label>
               <span className="text-4xl font-black text-slate-800 leading-none">
                 {difficulty}
@@ -54,7 +69,7 @@ const Minage = ({ isMining, onToggle }) => {
             
             <input
               type="range"
-              min="1"
+              min="3"
               max="10"
               step="1"
               value={difficulty}
@@ -63,20 +78,60 @@ const Minage = ({ isMining, onToggle }) => {
             />
             
             <div className="flex justify-between text-[10px] font-bold text-slate-300 px-1">
-              <span>MIN (1)</span>
+              <span>MIN (3)</span>
               <span>MAX (10)</span>
             </div>
           </div>
           
-          <button 
+          <button
+            onClick={handleToggleMining} 
             className="w-full group relative flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-white uppercase tracking-widest transition-all shadow-xl active:scale-95 bg-gradient-to-r from-slate-800 to-slate-900 hover:from-teal-600 hover:to-emerald-600"
           >
             
-            Changer la difficulté
+            Miner
           </button>
           
         </div>
       </div>
+      {/* Selected Transactions List */}
+      
+        <div className="w-full bg-white/40 backdrop-blur-xl border border-white/50 rounded-[2.5rem] p-8 shadow-xl mt-4">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-teal-500 p-2 rounded-xl text-white">
+                <Database size={18} />
+            </div>
+            <h3 className="font-black text-slate-800 uppercase tracking-tighter">
+                Transactions à miner ({selectedTxs.length})
+            </h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {selectedTxs.map((tx, idx) => (
+              <div key={idx} className="bg-white/60 p-4 rounded-2xl border border-white flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <button 
+                    onClick={() => onToggleSelection(tx)}
+                    className="p-1.5 rounded-lg bg-teal-100 text-teal-600"
+                  >
+                    <CheckSquare size={16} />
+                  </button>
+                  <div className="overflow-hidden">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">Destinataire</p>
+                    <p className="text-[11px] font-mono text-slate-700 truncate">
+                        {tx.destinataire || tx.Destinataire}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right ml-4">
+                  <p className="text-sm font-black text-slate-800">
+                    {(tx.quantite || tx.Quantite || 0).toFixed(4)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      
     </motion.div>
   );
 };

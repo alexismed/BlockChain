@@ -14,15 +14,21 @@ export const apiAffiche = {
     miner: () => api.get("miner"),
     getBlockChain: () => api.get("all"),
     getMempool: () => api.get("mempool"), // NOUVELLE ROUTE ICI !
-    toggleMining: () => api.get("toggle"),
+    toggleSimulation: () => api.get("toggleSimulation"),
     clearBlockchain: () => api.get("clear"),
     hasher: (str) => api.get(`hasher?str=${str}`),
     getTransactions: (str) => api.get(`getTransactions?adresse=${str}`),
     getCoinBaseTransactions: (str) => api.get(`getCoinBaseTransactions?adresse=${str}`),
     getFraisBlock: (index) => api.get(`getFrais?index=${index}`),
+    deleteTransaction: (txID) =>
+        api.post(`deleteTransaction?txID=${txID}`),
 
     changerDifficulte: (target) =>
         api.post(`changerDifficulte?target=${target}`),
+
+    toggleMining: (txIDs, target) =>
+        api.post('toggleMining', { txIDs, target }),
+
 
     creerTransaction: (token, destinataire, montant) =>
         api.post(`transaction?token=${token}&destinataire=${destinataire}&montant=${montant}`)

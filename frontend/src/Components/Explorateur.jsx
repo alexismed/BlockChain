@@ -152,7 +152,7 @@ const Explorateur = () => {
 
   const handleToggleSimulation = async () => {
     try {
-      const res = await apiAffiche.toggleMining();
+      const res = await apiAffiche.toggleSimulation();
       setSimActive(res.data);
     } catch (err) {
       afficherNotification("Erreur lors de l'action de minage");
@@ -161,7 +161,7 @@ const Explorateur = () => {
   };
 
   const handleClearBlockchain = async () => { 
-  if (window.confirm("Are you sure you want to delete the ENTIRE blockchain? This action is irreversible.")) {
+  if (window.confirm("Vous etes sûr de vouloir supprimer TOUTE la Blockchain? Cette action est irreversible.")) {
     try {
       await apiAffiche.clearBlockchain();
       setBlocks([]); // Clear the local state immediately for better UX
