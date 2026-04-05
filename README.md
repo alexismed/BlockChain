@@ -1,7 +1,7 @@
 # Projet de Blockchain
 
 Projet educatif simulant le fonctionnement d'une blockchain avec minage par Preuve de Travail (Proof of Work)
-Lien github: https://github.com/alexismed/BlockChain
+- Lien github: https://github.com/alexismed/BlockChain
 
 ## Technologies
 

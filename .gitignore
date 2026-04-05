@@ -35,3 +35,4 @@ build/
 ### Contenu site ###
 /blockchain.json
 /mempool.json
+/userlist.json
